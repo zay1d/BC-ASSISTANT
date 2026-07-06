@@ -1,0 +1,6 @@
+# Локальные настройки машины разработчика (пути Windows, персональные permissions)
+.claude/settings.local.json
+
+# Прочее
+.DS_Store
+Thumbs.db

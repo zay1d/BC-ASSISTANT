@@ -1,0 +1,1588 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUMMIT Business Center — Управление арендой</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --steel-900:#0e1b2a;
+    --steel-800:#15293d;
+    --steel-700:#1f3b56;
+    --steel-500:#3a5e82;
+    --steel-300:#7e9bb6;
+    --paper:#f3f5f7;
+    --paper-2:#e7ecf0;
+    --card:#ffffff;
+    --ink:#0e1b2a;
+    --ink-soft:#54677a;
+    --line:#dde4ea;
+    --amber:#e0922f;
+    --amber-soft:#fbe9d0;
+    --hot:#d8472f;
+    --hot-soft:#fbe0db;
+    --warm:#e0922f;
+    --warm-soft:#fbe9d0;
+    --cold:#4d83c4;
+    --cold-soft:#dbe8f6;
+    --won:#2f9e6f;
+    --won-soft:#d6efe4;
+    --lost:#94a3af;
+    --lost-soft:#e7ecf0;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(14,27,42,.06),0 8px 24px rgba(14,27,42,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.mono{font-family:'Space Grotesk',sans-serif}
+  button{font-family:inherit;cursor:pointer}
+  .num{font-family:'Space Grotesk',sans-serif;font-feature-settings:"tnum"}
+
+  /* ---------- Shell ---------- */
+  .shell{display:flex;min-height:100vh}
+  .side{
+    width:230px;flex:0 0 230px;
+    background:var(--steel-900);
+    color:#cdd9e4;
+    padding:22px 16px;
+    position:sticky;top:0;height:100vh;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .brand{display:flex;align-items:center;gap:11px;padding:4px 8px 20px;perspective:600px}
+  .brand svg{flex:0 0 auto}
+  @keyframes spinY{to{transform:rotateY(360deg)}}
+  .brand b{font-family:'Space Grotesk';font-size:18px;color:#fff;letter-spacing:2.5px;font-weight:700;position:relative;display:inline-block;transform-style:preserve-3d;animation:spinY 6s linear infinite}
+  .brand b span{display:inline-block;backface-visibility:hidden}
+  .brand b .f2{position:absolute;left:0;top:0;transform:rotateY(180deg)}
+  .brand small{display:block;color:var(--steel-300);font-size:11px;letter-spacing:.3px;margin-top:1px}
+  .nav{display:flex;flex-direction:column;gap:3px}
+  .nav button{
+    display:flex;align-items:center;gap:11px;
+    background:none;border:none;color:#9fb3c6;
+    padding:10px 12px;border-radius:10px;text-align:left;
+    font-size:13.5px;font-weight:500;width:100%;transition:.15s;
+  }
+  .nav button svg{flex:0 0 auto;opacity:.85}
+  .nav button:hover{background:var(--steel-800);color:#eaf1f7}
+  .nav button.active{background:var(--steel-700);color:#fff}
+  .side-foot{margin-top:auto;font-size:11px;color:var(--steel-500);padding:8px;line-height:1.5}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:16px;
+    padding:18px 30px;border-bottom:1px solid var(--line);
+    background:rgba(243,245,247,.85);backdrop-filter:blur(8px);
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.2px}
+  .topbar .sub{color:var(--ink-soft);font-size:12.5px;margin-top:2px}
+  .spacer{flex:1}
+  .btn{
+    border:1px solid var(--line);background:var(--card);
+    padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;
+    color:var(--ink);display:inline-flex;align-items:center;gap:7px;transition:.15s;
+  }
+  .btn:hover{border-color:var(--steel-300)}
+  .btn.primary{background:var(--steel-900);color:#fff;border-color:var(--steel-900)}
+  .btn.primary:hover{background:var(--steel-800)}
+  .content{padding:26px 30px 60px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- KPI ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .kpi .lab{color:var(--ink-soft);font-size:12px;font-weight:600;letter-spacing:.2px;text-transform:uppercase}
+  .kpi .val{font-size:30px;font-weight:700;margin:8px 0 2px;letter-spacing:-1px}
+  .kpi .val small{font-size:15px;color:var(--ink-soft);font-weight:600;letter-spacing:0}
+  .kpi .delta{font-size:12px;font-weight:600}
+  .kpi .delta.up{color:var(--won)}
+  .kpi .delta.down{color:var(--hot)}
+  .kpi-accent{position:absolute;left:0;top:0;bottom:0;width:4px}
+
+  .grid2{display:grid;grid-template-columns:1.45fr 1fr;gap:20px;margin-bottom:20px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px}
+  .panel-h h3{margin:0;font-size:15px;font-weight:600}
+  .panel-h .hint{font-size:11.5px;color:var(--ink-soft)}
+  .panel-b{padding:4px 18px 18px}
+
+  /* funnel bars */
+  .funnel{display:flex;flex-direction:column;gap:9px;padding:6px 0}
+  .frow{display:flex;align-items:center;gap:12px}
+  .frow .name{width:120px;flex:0 0 120px;font-size:12.5px;color:var(--ink-soft);font-weight:500}
+  .frow .track{flex:1;height:30px;background:var(--paper-2);border-radius:7px;overflow:hidden;position:relative}
+  .frow .fill{height:100%;border-radius:7px;display:flex;align-items:center;padding-left:11px;color:#fff;font-size:12.5px;font-weight:600;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+  .frow .cnt{width:64px;flex:0 0 64px;text-align:right;font-size:13px;font-weight:600}
+
+  /* stack of floors (signature) */
+  .bmap{display:flex;gap:24px;align-items:stretch}
+  .building{flex:0 0 162px;display:flex;align-items:center;justify-content:center;padding:2px 0}
+  .building svg{width:100%;height:auto;display:block}
+  .stack{flex:1;display:flex;flex-direction:column-reverse;gap:4px;padding:6px 4px;min-width:0}
+  .floor{display:flex;align-items:center;gap:10px;height:26px}
+  .floor .fl-n{width:30px;flex:0 0 30px;text-align:right;font-size:11px;color:var(--ink-soft);font-weight:600}
+  .floor .fl-occ{width:40px;flex:0 0 40px;text-align:right;font-size:11px;font-weight:700;color:var(--ink)}
+  .floor .fl-occ.free{color:var(--steel-300);font-weight:600}
+  .floor .fl-pills{flex:0 0 250px;display:flex;gap:6px;align-items:center;overflow:hidden}
+  .floor .pl{font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
+  .floor .pl-occ{background:var(--won-soft);color:var(--won)}
+  .floor .pl-free{background:var(--paper-2);color:var(--ink-soft)}
+  .fl-bar-wrap{flex:1;position:relative;display:flex;align-items:center}
+  .floor .fl-bar{flex:1;height:22px;border-radius:5px;background:var(--paper-2);overflow:hidden;cursor:pointer;display:flex;gap:1px}
+  .comp-badge{position:absolute;top:-9px;left:0;transform:translateX(-50%);min-width:23px;height:23px;border-radius:999px;background:#ef4136;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid #fff;box-shadow:0 0 0 0 rgba(239,65,54,.9);animation:compPulse 1.35s ease-out infinite;z-index:10;cursor:pointer;pointer-events:auto}
+  .comp-badge:hover{background:#d92d22}
+  @keyframes compPulse{0%{box-shadow:0 0 0 0 rgba(239,65,54,.85)}70%{box-shadow:0 0 0 12px rgba(239,65,54,0)}100%{box-shadow:0 0 0 0 rgba(239,65,54,0)}}
+  .floor .fl-bar .seg{height:100%;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:pointer;transition:filter .12s}
+  .floor .fl-bar .seg:hover{filter:brightness(1.1)}
+  .floor .fl-bar:hover{outline:2px solid var(--steel-300);outline-offset:1px}
+  .floor .fl-tog{flex:0 0 30px;display:flex;align-items:center}
+  .floor.inactive{opacity:.55}
+  .floor .pl-off{background:var(--paper-2);color:var(--steel-300);font-style:italic}
+  .floor .fl-bar-off{background:repeating-linear-gradient(45deg,var(--paper-2),var(--paper-2) 6px,#eef2f5 6px,#eef2f5 12px);cursor:default}
+  .tog{position:relative;width:30px;height:17px;border-radius:20px;border:none;padding:0;cursor:pointer;background:var(--won);transition:background .18s;flex:0 0 auto}
+  .tog.off{background:var(--steel-300)}
+  .tog::after{content:'';position:absolute;top:2px;left:15px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .18s;box-shadow:0 1px 2px rgba(14,27,42,.25)}
+  .tog.off::after{left:2px}
+
+  /* config page */
+  .zhead{display:inline-flex;align-items:center;gap:6px}
+  .zdot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .zdot.z1{background:#7e9bb6}.zdot.z2{background:#4d83c4}.zdot.z3{background:#e0922f}.zdot.z4{background:#2f9e6f}
+  .cellin{padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;background:var(--card)}
+  input.cellin{width:84px;text-align:right;font-family:'Space Grotesk',sans-serif;font-weight:600}
+  .rate-in{display:flex;align-items:center;gap:4px;color:var(--ink-soft)}
+  .rate-in input{width:68px}
+  tr.rowoff{opacity:.5}
+  /* config: floors → units accordion */
+  .cfg-floors{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+  .cfg-fl{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+  .cfg-fl.cfg-off{opacity:.62}
+  .cfg-fl.open{box-shadow:var(--shadow);border-color:var(--steel-300)}
+  .cfg-fl-h{display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer}
+  .cfg-fl-h:hover{background:#f7fafc}
+  .cfg-fl-n{flex:0 0 34px;font-size:18px;font-weight:700;letter-spacing:-.5px}
+  .cfg-fl-type{flex:0 0 200px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cfg-fl-meta{flex:1;font-size:12.5px;color:var(--ink-soft)}
+  .cfg-caret{flex:0 0 auto;color:var(--ink-soft);font-size:12px}
+  .cfg-units{padding:6px 16px 16px;border-top:1px solid var(--line);background:#fbfcfd}
+  .cfg-utbl{width:100%;border-collapse:collapse;box-shadow:none;background:transparent}
+  .cfg-utbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink-soft);font-weight:700;text-align:left;padding:8px 8px;border-bottom:1px solid var(--line)}
+  .cfg-utbl td{padding:5px 8px;border-bottom:1px solid var(--line)}
+  .cfg-utbl tr:last-child td{border-bottom:none}
+  .cfg-utbl .cellin{width:100%;max-width:none}
+  @media(max-width:760px){.cfg-fl-type{flex-basis:120px}}
+  /* status map (Этажи → помещения) */
+  .smap{display:flex;flex-direction:column;gap:5px;padding:6px 2px}
+  .smap-row{display:flex;align-items:center;gap:12px}
+  .smap-n{flex:0 0 36px;text-align:right;font-size:13px;font-weight:700;color:var(--ink)}
+  .smap-bar{flex:1;display:flex;gap:6px;align-items:center}
+  .smap-bar .u{height:30px;line-height:30px;border-radius:999px;padding:0 12px;font-size:9.5px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;min-width:30px;box-shadow:0 1px 2px rgba(14,27,42,.12);transition:filter .12s,transform .12s}
+  .smap-bar .u:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  /* unit multi-select chips in deal card */
+  .unitchips{display:flex;flex-wrap:wrap;gap:6px}
+  .uchip{border:1px solid var(--line);background:var(--card);padding:6px 10px;border-radius:9px;font-size:12px;font-weight:600;color:var(--steel-700);cursor:pointer}
+  .uchip:hover{border-color:var(--steel-300)}
+  .uchip.on{background:var(--steel-900);color:#fff;border-color:var(--steel-900)}
+  .autohint{font-weight:500;text-transform:none;letter-spacing:0;color:var(--steel-500);font-size:10px}
+
+  /* 3 cards row (Итоги · Воронка · Статус) — равная высота, контент на всю площадь */
+  .grid3{display:grid;grid-template-columns:1.05fr 1.35fr 0.95fr;gap:20px;margin-bottom:20px;align-items:stretch}
+  .grid3 .panel{display:flex;flex-direction:column}
+  .grid3 .panel-b{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .grid3 .panel-b > svg{align-self:center}
+  .seg-chips{display:flex;gap:6px}
+  .seg-chips .chip{padding:5px 11px;font-size:12px}
+  .pstat-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .pstat-row:last-child{border-bottom:none}
+  .grid3 .pstat-row{flex:1}
+  .pstat-row .pv{flex:0 0 100px;text-align:right;font-size:21px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
+  .pstat-row .pl{font-size:12.5px;color:var(--ink-soft)}
+  .grid3 .panel-b > .funnel{flex:1;justify-content:space-between}
+  @media(max-width:1080px){.grid3{grid-template-columns:1fr}.grid3 .panel-b{justify-content:flex-start}.grid3 .pstat-row{flex:0 0 auto}}
+  @media(max-width:760px){.seg-chips{flex-wrap:wrap}}
+
+  /* tasks panel */
+  .tasklist{display:flex;flex-direction:column;padding:2px 0}
+  .task{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s}
+  .task:last-child{border-bottom:none}
+  .task:hover{background:#f7fafc}
+  .task-tag{flex:0 0 92px;text-align:center;font-size:10px;font-weight:700;padding:4px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+  .task-tag.late{background:var(--hot-soft);color:var(--hot)}
+  .task-tag.now{background:var(--amber-soft);color:#b06f12}
+  .task-tag.soon{background:var(--paper-2);color:var(--ink-soft)}
+  .task-main{flex:1;min-width:0}
+  .task-t{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .task-sub{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* management report (print) */
+  #report{display:none}
+  @media print{
+    .shell,.scrim,.drawer{display:none!important}
+    body{background:#fff}
+    #report{display:block!important;color:#000;font-family:'Inter',sans-serif;padding:0}
+    #report h1{font-size:22px;margin:0 0 2px}
+    #report .rep-date{color:#555;margin-bottom:16px;font-size:13px}
+    #report h2{font-size:15px;margin:20px 0 8px;border-bottom:2px solid #000;padding-bottom:4px}
+    #report .rep-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0}
+    #report .rep-kpi div{border:1px solid #ccc;border-radius:8px;padding:10px}
+    #report .rep-kpi b{display:block;font-size:21px;font-family:'Space Grotesk',sans-serif}
+    #report .rep-kpi span{font-size:11px;color:#555}
+    #report .rep-t{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+    #report .rep-t th,#report .rep-t td{border:1px solid #ccc;padding:6px 8px;text-align:left}
+    #report .rep-t th{background:#f0f0f0}
+    #report .rep-foot{margin-top:22px;font-size:10px;color:#888}
+    @page{margin:14mm}
+  }
+  @media(max-width:760px){.bmap{flex-direction:column}.building{flex:0 0 auto;max-width:180px;margin:0 auto}}
+
+  /* weekly meetings bar chart */
+  .weekbars{display:flex;align-items:stretch;gap:8px;height:170px;padding:8px 2px 0}
+  .wb{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+  .wb-v{height:16px;font-size:11px;font-weight:700;color:var(--steel-700)}
+  .wb-track{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+  .wb-fill{width:62%;max-width:34px;background:var(--steel-500);border-radius:5px 5px 0 0;min-height:2px;transition:height .6s cubic-bezier(.2,.7,.2,1)}
+  .wb:hover .wb-fill{background:var(--steel-700)}
+  .wb-x{height:16px;margin-top:6px;font-size:9.5px;color:var(--ink-soft);white-space:nowrap}
+
+  /* activity log buttons in drawer */
+  .logbtns{display:flex;gap:7px;margin:8px 0 12px;flex-wrap:wrap}
+  .logb{border:1px solid var(--line);background:var(--card);padding:7px 11px;border-radius:9px;font-size:12px;font-weight:600;color:var(--steel-700)}
+  .logb:hover{border-color:var(--steel-300);background:var(--paper-2)}
+  .logb.on{background:var(--steel-900);color:#fff;border-color:var(--steel-900)}
+  .addact{display:flex;gap:8px;margin:0 0 12px}
+  .addact input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;background:var(--card)}
+  .addact .btn{flex:0 0 auto;padding:9px 14px}
+  .acn{font-size:12px;color:var(--ink);background:var(--paper-2);border-radius:7px;padding:5px 9px;margin:3px 0 2px;line-height:1.45}
+
+  /* tasks editor in drawer */
+  .tasklist-edit{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
+  .te{display:flex;flex-direction:column;gap:7px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+  .te-top{display:flex;align-items:center;gap:9px}
+  .te-comment{width:100%;padding:6px 9px;border:1px solid var(--line);border-radius:8px;font-size:12px;font-family:inherit;background:var(--paper)}
+  .te-comment:focus{outline:none;border-color:var(--steel-300);background:var(--card)}
+  .te.late{border-color:var(--hot);background:var(--hot-soft)}
+  .te.done{opacity:.6}
+  .te.done .te-text{text-decoration:line-through}
+  .te-check{flex:0 0 18px;width:18px;height:18px;border:2px solid var(--steel-300);border-radius:5px;background:var(--card);cursor:pointer;padding:0;position:relative}
+  .te-check.on{background:var(--won);border-color:var(--won)}
+  .te-check.on::after{content:'✓';color:#fff;font-size:12px;font-weight:700;position:absolute;top:-3px;left:2px}
+  .te-main{flex:1;min-width:0}
+  .te-text{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .te-date{font-size:11px;color:var(--ink-soft);margin-top:1px}
+  .te.late .te-date{color:var(--hot);font-weight:600}
+  .te-del{flex:0 0 auto;border:none;background:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:2px 4px;border-radius:6px}
+  .te-del:hover{background:var(--paper-2);color:var(--hot)}
+  .addtask{display:flex;gap:8px;flex-wrap:wrap}
+  .addtask #f_newtask{flex:1;min-width:120px}
+  .addtask input{padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;background:var(--card)}
+  .addtask .btn{flex:0 0 auto}
+  .muted{font-size:12.5px;color:var(--ink-soft);padding:4px 2px;line-height:1.5}
+  /* prioritization block */
+  .prio-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .prio-lab{font-size:13px;color:var(--ink-soft);font-weight:600}
+  .prio-sel{flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;background:var(--card)}
+  .scoregrid{display:flex;flex-direction:column;gap:6px}
+  .score-row{display:flex;align-items:center;gap:10px}
+  .score-lab{flex:1;font-size:12.5px;color:var(--ink)}
+  .score-in{flex:0 0 66px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:600;background:var(--card);text-align:center}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 18px 4px;font-size:11.5px;color:var(--ink-soft)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* ---------- Pipeline / kanban ---------- */
+  .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px}
+  .col{flex:0 0 270px;background:var(--paper-2);border-radius:var(--radius);display:flex;flex-direction:column;max-height:74vh}
+  .col-h{padding:13px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+  .col-h .ttl{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .col-h .ct{background:var(--card);border-radius:20px;padding:1px 9px;font-size:11.5px;font-weight:700;color:var(--ink-soft)}
+  .col-h .sum{font-size:11px;color:var(--ink-soft);font-weight:600}
+  .col-body{padding:0 10px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;flex:1}
+  .deal{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px;box-shadow:0 1px 2px rgba(14,27,42,.05);cursor:grab}
+  .deal:active{cursor:grabbing}
+  .deal.drag{opacity:.4}
+  .deal .dn{font-weight:600;font-size:13.5px;margin-bottom:2px}
+  .deal .dm{font-size:11.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:4px 9px;margin:5px 0 8px}
+  .deal .drow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .deal .price{font-size:13px;font-weight:700}
+  .temp{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:20px}
+  .temp.hot{background:var(--hot-soft);color:var(--hot)}
+  .temp.warm{background:var(--warm-soft);color:#b06f12}
+  .temp.cold{background:var(--cold-soft);color:#2f64a3}
+  .col.drop{outline:2px dashed var(--steel-300);outline-offset:-4px}
+
+  /* ---------- Tables ---------- */
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--card);font-family:inherit}
+  .search svg{position:absolute;left:11px;top:11px;color:var(--ink-soft)}
+  .chip{border:1px solid var(--line);background:var(--card);padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+  .chip.on{background:var(--steel-900);color:#fff;border-color:var(--steel-900)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);font-weight:700;padding:13px 16px;border-bottom:1px solid var(--line);background:#fbfcfd}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{cursor:pointer;transition:.12s}
+  tbody tr:hover{background:#f7fafc}
+  .pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-block}
+  .av{width:30px;height:30px;border-radius:8px;background:var(--steel-700);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Grotesk'}
+  .cellname{display:flex;align-items:center;gap:10px;font-weight:600}
+
+  /* ---------- Drawer / modal ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(14,27,42,.45);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .modal-scrim{position:fixed;inset:0;background:rgba(14,27,42,.5);opacity:0;pointer-events:none;transition:.2s;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
+  .modal-scrim.open{opacity:1;pointer-events:auto}
+  .modal-box{width:min(620px,100%);max-height:86vh;overflow:auto;background:var(--paper);border-radius:16px;box-shadow:0 24px 70px rgba(14,27,42,.35);transform:translateY(12px) scale(.98);transition:.2s}
+  .modal-scrim.open .modal-box{transform:none}
+  .modal-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 12px}
+  .modal-hd h3{margin:0;font-family:'Space Grotesk',sans-serif;font-size:18px;color:var(--steel-900)}
+  .modal-hd .sub{margin-top:4px;font-size:12px;color:var(--ink-soft)}
+  .modal-x{flex:0 0 auto;width:30px;height:30px;border-radius:8px;border:none;background:var(--paper-2);color:var(--ink-soft);font-size:16px;cursor:pointer}
+  .modal-x:hover{background:#e6ebf1}
+  .modal-bd{padding:4px 22px 22px}
+  .contest-u{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+  .contest-u .uhd{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .contest-u .unum{font-weight:800;color:var(--steel-900);font-size:14px}
+  .contest-u .uarea{font-size:12px;color:var(--ink-soft)}
+  .contest-u .cnt{margin-left:auto;background:#fdeeeb;color:#c85a48;font-weight:800;font-size:11px;padding:3px 9px;border-radius:999px}
+  .claimant{display:flex;align-items:center;gap:9px;padding:6px 0;border-top:1px dashed var(--line);cursor:pointer}
+  .claimant:hover{opacity:.8}
+  .claimant .dot{width:9px;height:9px;border-radius:999px;flex:0 0 auto}
+  .claimant .nm{font-weight:700;font-size:13px;color:var(--steel-900)}
+  .claimant .st{margin-left:auto;font-size:11px;color:var(--ink-soft)}
+  .claimant.won .nm::after{content:' ✓';color:var(--won)}
+  .drawer{position:fixed;inset:0;width:100%;height:100vh;max-width:none;background:var(--paper);z-index:50;display:none;flex-direction:column}
+  .drawer.open{display:flex;animation:fade .22s ease}
+  /* full-screen deal card */
+  .df-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 26px;border-bottom:1px solid var(--line);background:var(--card);flex:0 0 auto}
+  .df-top h2{margin:0;font-size:20px;font-weight:700}
+  .df-sub{color:var(--ink-soft);font-size:12.5px;margin-top:2px}
+  .df-actions{display:flex;gap:10px;align-items:center}
+  .df-actions .x{border:none;background:var(--paper-2);width:38px;height:38px;border-radius:10px;font-size:17px;color:var(--ink-soft);cursor:pointer}
+  .df-actions .x:hover{background:var(--line)}
+  .df-cols{flex:1;display:grid;grid-template-columns:1fr 1fr 0.95fr;min-height:0}
+  .df-col{padding:22px 26px;overflow-y:auto;border-right:1px solid var(--line);min-width:0}
+  .df-col:last-child{border-right:none}
+  .df-h{margin:0 0 16px;font-size:13px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);font-weight:700}
+  .df-plans{background:#fbfcfd}
+  .addtask-box{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:16px}
+  .addtask-box input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;font-family:inherit;background:var(--card)}
+  .addtask-row{display:flex;gap:8px;margin-top:8px}
+  .addtask-row input{flex:1;min-width:0}
+  .files-sec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  .files-h{margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--steel-500);display:flex;gap:8px;align-items:baseline}
+  .filedrop{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:1.5px dashed var(--steel-400);border-radius:10px;color:var(--steel-700);font-size:13px;font-weight:700;cursor:pointer;background:var(--paper-2);transition:.15s}
+  .filedrop:hover{border-color:var(--steel-700);background:var(--card)}
+  .filelist{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+  .file-row{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--paper-2);border:1px solid var(--line);border-radius:10px}
+  .file-row .fic{font-size:16px;flex:0 0 auto}
+  .file-row .fnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;color:var(--steel-900);cursor:pointer}
+  .file-row .fnm:hover{text-decoration:underline}
+  .file-row .fsz{flex:0 0 auto;font-size:11px;color:var(--ink-soft)}
+  .file-row .fdate{flex:0 0 auto;font-size:11px;font-weight:600;color:var(--steel-500);padding-left:2px}
+  .file-row .fdl,.file-row .fdel{flex:0 0 auto;width:26px;height:26px;border:none;border-radius:7px;background:var(--card);color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1}
+  .file-row .fdl:hover{background:var(--won-soft);color:var(--won)}
+  .file-row .fdel:hover{background:#fdeeeb;color:#c85a48}
+  .addtask-row .btn{flex:0 0 auto}
+  .te-badge{flex:0 0 auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .te-badge.late{background:var(--hot-soft);color:var(--hot)}
+  .te-badge.now{background:var(--amber-soft);color:#b06f12}
+  .te-badge.soon{background:var(--paper-2);color:var(--ink-soft)}
+  .te-badge.ok{background:var(--won-soft);color:var(--won)}
+  @media(max-width:980px){.df-cols{display:block;overflow-y:auto}.df-col{border-right:none;border-bottom:1px solid var(--line)}}
+  .dr-h{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .dr-h h3{margin:0;font-size:18px}
+  .dr-h .x{border:none;background:var(--paper-2);width:32px;height:32px;border-radius:9px;font-size:17px;color:var(--ink-soft);flex:0 0 auto}
+  .dr-b{padding:20px 22px;overflow-y:auto;flex:1}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;font-family:inherit;background:var(--card)}
+  .field textarea{resize:vertical;min-height:62px}
+  .frow2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dr-f{padding:16px 22px;border-top:1px solid var(--line);display:flex;gap:10px}
+  .dr-f .btn{flex:1;justify-content:center}
+  .danger{color:var(--hot);border-color:var(--hot-soft)!important;background:var(--hot-soft)!important}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;border:1px solid var(--line);background:var(--card);padding:9px;border-radius:10px;font-size:12px;font-weight:600;color:var(--ink-soft)}
+  .seg button.on[data-t=hot]{background:var(--hot);color:#fff;border-color:var(--hot)}
+  .seg button.on[data-t=warm]{background:var(--amber);color:#fff;border-color:var(--amber)}
+  .seg button.on[data-t=cold]{background:var(--cold);color:#fff;border-color:var(--cold)}
+
+  .acts{margin-top:18px}
+  .act{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .act:last-child{border:none}
+  .act .ic{width:28px;height:28px;border-radius:8px;background:var(--paper-2);display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:14px}
+  .act .at{font-size:12.5px}
+  .act .ad{font-size:11px;color:var(--ink-soft);margin-top:2px}
+
+  .empty{text-align:center;padding:50px 20px;color:var(--ink-soft)}
+  .empty svg{opacity:.4;margin-bottom:10px}
+
+  @media(max-width:1080px){
+    .kpi-row{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+  }
+  @media(max-width:760px){
+    .side{position:fixed;left:-240px;z-index:60;transition:.25s}
+    .side.show{left:0}
+    .menu-btn{display:inline-flex!important}
+    .kpi-row{grid-template-columns:1fr 1fr}
+    .content{padding:18px 16px 50px}
+    .topbar{padding:14px 16px}
+  }
+  .menu-btn{display:none}
+</style>
+
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg width="34" height="28" viewBox="0 0 34 28" fill="none">
+        <path d="M1 25 L10 6 L17 18 L24 4 L33 25 Z" fill="#e7eff7"/>
+        <path d="M10 6 L17 18 L12.5 25 L6 25 Z" fill="#aebfd2"/>
+      </svg>
+      <div><b class="logo3d"><span class="f1">SUMMIT</span><span class="f2">SUMMIT</span></b><small>Business Center</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-v="dash" class="active" data-ic="grid">Дашборд</button>
+      <button data-v="tasks" data-ic="tasks">Задачи</button>
+      <button data-v="pipe" data-ic="flow">Воронка сделок</button>
+      <button data-v="tenants" data-ic="users">Арендаторы</button>
+      <button data-v="floors" data-ic="layers">Карта статусов</button>
+      <button data-v="config" data-ic="sliders">Исходные данные</button>
+    </nav>
+    <div class="side-foot">Данные сохраняются<br>в этом инструменте автоматически.</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="btn menu-btn" data-ic="menu" onclick="document.getElementById('side').classList.toggle('show')"></button>
+      <div>
+        <h2 id="vTitle">Дашборд</h2>
+        <div class="sub" id="vSub">Сводка по заполняемости и динамике сделок</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn" data-ic="report" onclick="printReport()">Отчёт</button>
+      <button class="btn primary" data-ic="plus" onclick="openDeal()">Новая сделка</button>
+    </header>
+
+    <div class="content">
+      <section class="view active" id="view-dash"></section>
+      <section class="view" id="view-tasks"></section>
+      <section class="view" id="view-pipe"></section>
+      <section class="view" id="view-tenants"></section>
+      <section class="view" id="view-floors"></section>
+      <section class="view" id="view-config"></section>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"></div>
+<div class="modal-scrim" id="modalScrim" onclick="closeModal()"><div class="modal-box" id="modalBox" onclick="event.stopPropagation()"></div></div>
+<div id="report"></div>
+
+<script>
+/* ---------- icons ---------- */
+function ic(n){const p={
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  flow:'<rect x="3" y="4" width="6" height="5" rx="1"/><rect x="3" y="15" width="6" height="5" rx="1"/><rect x="15" y="9" width="6" height="6" rx="1"/><path d="M9 6h3a2 2 0 0 1 2 2v0M9 17h3a2 2 0 0 0 2-2v0"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 6a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-4.9"/>',
+  layers:'<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 13l9 5 9-5M3 17l9 5 9-5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>',
+  empty:'<path d="M3 7l9-4 9 4v10l-9 4-9-4Z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  sliders:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+  report:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h6"/>',
+  tasks:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'
+};return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(p[n]||'')+'</svg>';}
+
+/* ---------- model ---------- */
+const STAGES=[
+  {id:'lead',name:'Лид',color:'#7e9bb6'},
+  {id:'qual',name:'Квалификация',color:'#4d83c4'},
+  {id:'tour',name:'Показ',color:'#5a7bd6'},
+  {id:'loi',name:'Предложение',color:'#e0922f'},
+  {id:'nego',name:'Переговоры',color:'#d8722f'},
+  {id:'won',name:'Подписано',color:'#2f9e6f'},
+];
+const TEMPS={hot:'Горячая',warm:'Тёплая',cold:'Холодная'};
+const FLOORS=27, AREA_PER=820; // m2 typical per floor
+const FLOORDATA=[{"n": 30, "gla": null, "type": "Elevator Machine Room", "active": false, "units": []}, {"n": 29, "gla": null, "type": "Heating Center", "active": false, "units": []}, {"n": 28, "gla": null, "type": "Cooling Pump Room", "active": false, "units": [{"number": "28.1", "area": 143.65, "rate": null}]}, {"n": 27, "gla": 966.42, "type": "Restaurant + Terrace", "active": true, "units": [{"number": "27.1", "area": 966.42, "rate": null}]}, {"n": 26, "gla": 984.66, "type": "Hyper Partners", "active": true, "units": [{"number": "26.1", "area": 984.66, "rate": null}]}, {"n": 25, "gla": 1039.26, "type": "Hyper Partners", "active": true, "units": [{"number": "25.1", "area": 1039.26, "rate": null}]}, {"n": 24, "gla": 1039.26, "type": "Office", "active": true, "units": [{"number": "24.1", "area": 122.21, "rate": 52.13}, {"number": "24.2", "area": 103.4, "rate": 51.38}, {"number": "24.3", "area": 98.97, "rate": 49.04}, {"number": "24.4", "area": 149.46, "rate": 52.13}, {"number": "24.5", "area": 206.57, "rate": 52.3}, {"number": "24.6", "area": 96.69, "rate": 52.3}, {"number": "24.7", "area": 84.71, "rate": 52.3}, {"number": "24.8", "area": 72.27, "rate": 52.3}, {"number": "24.9", "area": 104.98, "rate": 52.13}]}, {"n": 23, "gla": 1039.26, "type": "Office", "active": true, "units": [{"number": "23.1", "area": 122.21, "rate": 51.69}, {"number": "23.2", "area": 103.4, "rate": 50.47}, {"number": "23.3", "area": 98.97, "rate": 48.6}, {"number": "23.4", "area": 149.46, "rate": 52.13}, {"number": "23.5", "area": 206.57, "rate": 52.3}, {"number": "23.6", "area": 96.69, "rate": 52.3}, {"number": "23.7", "area": 84.71, "rate": 52.3}, {"number": "23.8", "area": 72.27, "rate": 52.3}, {"number": "23.9", "area": 104.98, "rate": 52.13}]}, {"n": 22, "gla": 957.03, "type": "Office + Tech. Room", "active": true, "units": [{"number": "22.1", "area": 121.7, "rate": 48.64}, {"number": "22.2", "area": 78.8, "rate": 47.46}, {"number": "22.3", "area": 99.53, "rate": 45.71}, {"number": "22.4", "area": 122.66, "rate": 47.8}, {"number": "22.5", "area": 178.46, "rate": 48.77}, {"number": "22.6", "area": 95.28, "rate": 48.77}, {"number": "22.7", "area": 85.4, "rate": 48.77}, {"number": "22.8", "area": 72.4, "rate": 48.77}, {"number": "22.9", "area": 102.8, "rate": 47.8}]}, {"n": 21, "gla": 958.03, "type": "Office + Tech. Room", "active": true, "units": [{"number": "21.1", "area": 121.7, "rate": 44.05}, {"number": "21.2", "area": 78.8, "rate": 46.61}, {"number": "21.3", "area": 99.53, "rate": 44.88}, {"number": "21.4", "area": 122.66, "rate": 47.38}, {"number": "21.5", "area": 178.46, "rate": 48.34}, {"number": "21.6", "area": 96.28, "rate": 48.34}, {"number": "21.7", "area": 85.4, "rate": 48.34}, {"number": "21.8", "area": 72.4, "rate": 48.34}, {"number": "21.9", "area": 102.8, "rate": 47.38}]}, {"n": 20, "gla": 958.03, "type": "Office + Tech. Room", "active": true, "units": [{"number": "20.1", "area": 121.7, "rate": 42.83}, {"number": "20.2", "area": 78.8, "rate": 45.76}, {"number": "20.3", "area": 99.53, "rate": 44.07}, {"number": "20.4", "area": 122.66, "rate": 46.95}, {"number": "20.5", "area": 178.46, "rate": 47.9}, {"number": "20.6", "area": 96.28, "rate": 47.9}, {"number": "20.7", "area": 85.4, "rate": 47.9}, {"number": "20.8", "area": 72.4, "rate": 47.9}, {"number": "20.9", "area": 102.8, "rate": 46.95}]}, {"n": 19, "gla": 958.03, "type": "Office + Tech. Room", "active": true, "units": [{"number": "19.1", "area": 121.7, "rate": 46.52}, {"number": "19.2", "area": 78.8, "rate": 45.77}, {"number": "19.3", "area": 99.53, "rate": 44.07}, {"number": "19.4", "area": 122.66, "rate": 46.52}, {"number": "19.5", "area": 178.46, "rate": 47.46}, {"number": "19.6", "area": 96.28, "rate": 47.46}, {"number": "19.7", "area": 85.4, "rate": 47.46}, {"number": "19.8", "area": 72.4, "rate": 47.46}, {"number": "19.9", "area": 102.8, "rate": 46.52}]}, {"n": 18, "gla": 1039.68, "type": "Office", "active": true, "units": [{"number": "18.1", "area": 121.31, "rate": 45.69}, {"number": "18.2", "area": 103.98, "rate": 44.93}, {"number": "18.3", "area": 98.64, "rate": 44.88}, {"number": "18.4", "area": 148.94, "rate": 45.29}, {"number": "18.5", "area": 206.68, "rate": 46.19}, {"number": "18.6", "area": 95.81, "rate": 46.19}, {"number": "18.7", "area": 89.31, "rate": 46.19}, {"number": "18.8", "area": 72.4, "rate": 46.19}, {"number": "18.9", "area": 102.61, "rate": 45.29}]}, {"n": 17, "gla": 1036.68, "type": "Office", "active": true, "units": [{"number": "17.1", "area": 121.31, "rate": 45.29}, {"number": "17.2", "area": 103.98, "rate": 44.51}, {"number": "17.3", "area": 98.64, "rate": 44.48}, {"number": "17.4", "area": 148.94, "rate": 45.29}, {"number": "17.5", "area": 206.68, "rate": 46.19}, {"number": "17.6", "area": 95.81, "rate": 46.19}, {"number": "17.7", "area": 86.31, "rate": 46.19}, {"number": "17.8", "area": 72.4, "rate": 46.19}, {"number": "17.9", "area": 102.61, "rate": 45.29}]}, {"n": 16, "gla": 1177.74, "type": "Office", "active": true, "units": [{"number": "16.1", "area": 1177.74, "rate": 44.45}]}, {"n": 15, "gla": 957.58, "type": "Office + Tech. Room", "active": true, "units": [{"number": "15.1", "area": 120.3, "rate": 44.05}, {"number": "15.2", "area": 79.85, "rate": 42.86}, {"number": "15.3", "area": 99.12, "rate": 43.66}, {"number": "15.4", "area": 122.53, "rate": 43.66}, {"number": "15.5", "area": 177.54, "rate": 44.51}, {"number": "15.6", "area": 96.26, "rate": 44.51}, {"number": "15.7", "area": 87.11, "rate": 44.51}, {"number": "15.8", "area": 72.35, "rate": 44.51}, {"number": "15.9", "area": 102.52, "rate": 43.66}]}, {"n": 14, "gla": 957.58, "type": "Office + Tech. Room", "active": true, "units": [{"number": "14.1", "area": 120.3, "rate": 42.83}, {"number": "14.2", "area": 79.85, "rate": 41.65}, {"number": "14.3", "area": 99.12, "rate": 42.44}, {"number": "14.4", "area": 122.53, "rate": 42.83}, {"number": "14.5", "area": 177.54, "rate": 43.67}, {"number": "14.6", "area": 96.26, "rate": 43.67}, {"number": "14.7", "area": 87.11, "rate": 43.67}, {"number": "14.8", "area": 72.35, "rate": 43.67}, {"number": "14.9", "area": 102.52, "rate": 42.83}]}, {"n": 13, "gla": 957.58, "type": "Office + Tech. Room", "active": true, "units": [{"number": "13.1", "area": 120.3, "rate": 42.44}, {"number": "13.2", "area": 79.85, "rate": 41.24}, {"number": "13.3", "area": 99.12, "rate": 42.05}, {"number": "13.4", "area": 122.53, "rate": 42.83}, {"number": "13.5", "area": 177.54, "rate": 43.67}, {"number": "13.6", "area": 96.26, "rate": 43.67}, {"number": "13.7", "area": 87.11, "rate": 43.67}, {"number": "13.8", "area": 72.35, "rate": 43.67}, {"number": "13.9", "area": 102.52, "rate": 42.83}]}, {"n": 12, "gla": 957.58, "type": "Office", "active": true, "units": [{"number": "12.1", "area": 120.3, "rate": 41.24}, {"number": "12.2", "area": 79.85, "rate": 40.05}, {"number": "12.3", "area": 99.12, "rate": 40.86}, {"number": "12.4", "area": 122.53, "rate": 41.24}, {"number": "12.5", "area": 177.54, "rate": 42.04}, {"number": "12.6", "area": 96.26, "rate": 42.04}, {"number": "12.7", "area": 87.11, "rate": 42.04}, {"number": "12.8", "area": 72.35, "rate": 42.04}, {"number": "12.9", "area": 102.52, "rate": 41.24}]}, {"n": 11, "gla": 873.01, "type": "Office", "active": true, "units": [{"number": "11.1", "area": 120.94, "rate": 40.86}, {"number": "11.2", "area": 104.26, "rate": 39.66}, {"number": "11.3", "area": 97.07, "rate": 40.48}, {"number": "11.4", "area": 148.49, "rate": 41.24}, {"number": "11.5", "area": 95.12, "rate": 42.04}, {"number": "11.6", "area": 67.72, "rate": 42.04}, {"number": "11.7", "area": 71.21, "rate": 42.04}, {"number": "11.8", "area": 71.84, "rate": 42.04}, {"number": "11.9", "area": 96.36, "rate": 41.24}]}, {"n": 10, "gla": 1026.49, "type": "Office", "active": true, "units": [{"number": "10.1", "area": 120.74, "rate": 39.69}, {"number": "10.2", "area": 87.74, "rate": 38.49}, {"number": "10.3", "area": 113.54, "rate": 39.31}, {"number": "10.4", "area": 148.39, "rate": 40.44}, {"number": "10.5", "area": 206.53, "rate": 41.21}, {"number": "10.6", "area": 95.32, "rate": 41.21}, {"number": "10.7", "area": 87.51, "rate": 41.21}, {"number": "10.8", "area": 72.47, "rate": 41.21}, {"number": "10.9", "area": 94.25, "rate": 40.44}]}, {"n": 9, "gla": 952.21, "type": "Office + Tech. Room", "active": true, "units": [{"number": "9.1", "area": 120.34, "rate": 39.31}, {"number": "9.2", "area": 81.45, "rate": 38.1}, {"number": "9.3", "area": 95.89, "rate": 38.94}, {"number": "9.4", "area": 121.31, "rate": 38.16}, {"number": "9.5", "area": 176.06, "rate": 40.44}, {"number": "9.6", "area": 94.88, "rate": 40.44}, {"number": "9.7", "area": 88.17, "rate": 40.44}, {"number": "9.8", "area": 72.53, "rate": 40.44}, {"number": "9.9", "area": 101.58, "rate": 39.69}]}, {"n": 8, "gla": 952.21, "type": "Office + Tech. Room", "active": true, "units": [{"number": "8.1", "area": 120.34, "rate": 38.16}, {"number": "8.2", "area": 81.45, "rate": 36.96}, {"number": "8.3", "area": 95.89, "rate": 37.79}, {"number": "8.4", "area": 121.31, "rate": 37.4}, {"number": "8.5", "area": 176.06, "rate": 39.63}, {"number": "8.6", "area": 94.88, "rate": 39.63}, {"number": "8.7", "area": 88.17, "rate": 39.63}, {"number": "8.8", "area": 72.53, "rate": 39.63}, {"number": "8.9", "area": 101.58, "rate": 38.89}]}, {"n": 7, "gla": 952.21, "type": "Office + Tech. Room", "active": true, "units": [{"number": "7.1", "area": 120.34, "rate": 37.79}, {"number": "7.2", "area": 81.45, "rate": 36.58}, {"number": "7.3", "area": 95.89, "rate": 36.69}, {"number": "7.4", "area": 121.31, "rate": 37.4}, {"number": "7.5", "area": 176.06, "rate": 39.63}, {"number": "7.6", "area": 94.88, "rate": 39.63}, {"number": "7.7", "area": 88.17, "rate": 39.63}, {"number": "7.8", "area": 72.53, "rate": 39.63}, {"number": "7.9", "area": 101.58, "rate": 38.89}]}, {"n": 6, "gla": 1001.89, "type": "Office", "active": true, "units": [{"number": "6.1", "area": 120, "rate": 36.66}, {"number": "6.2", "area": 103.12, "rate": 35.46}, {"number": "6.3", "area": 98, "rate": 35.58}, {"number": "6.4", "area": 141.66, "rate": 37.38}, {"number": "6.5", "area": 186.98, "rate": 37.38}, {"number": "6.6", "area": 92.9, "rate": 33.59}, {"number": "6.7", "area": 87.23, "rate": 33.59}, {"number": "6.8", "area": 72, "rate": 33.59}, {"number": "6.9", "area": 100, "rate": 37.38}]}, {"n": 5, "gla": 426.64, "type": "Office", "active": true, "units": [{"number": "5.1", "area": 112.31, "rate": 36.3}, {"number": "5.2", "area": 44.5, "rate": 35.09}, {"number": "5.3", "area": 21.78, "rate": 35.22}, {"number": "5.4", "area": 25.98, "rate": 37.38}, {"number": "5.5", "area": 46.21, "rate": 38.82}, {"number": "5.6", "area": 25.53, "rate": 33.59}, {"number": "5.7", "area": 26.76, "rate": 33.59}, {"number": "5.8", "area": 87.59, "rate": 33.59}, {"number": "5.9", "area": 35.98, "rate": 37.38}]}, {"n": 4, "gla": 685.45, "type": "Flex Office", "active": true, "units": [{"number": "4.1", "area": 112.4, "rate": 34.82}, {"number": "4.2", "area": 68.06, "rate": 33.63}, {"number": "4.3", "area": 63.9, "rate": 33.77}, {"number": "4.4", "area": 62.47, "rate": 35.52}, {"number": "4.5", "area": 124.5, "rate": 36.88}, {"number": "4.6", "area": 54.09, "rate": 28.93}, {"number": "4.7", "area": 106.86, "rate": 28.93}, {"number": "4.8", "area": 53.34, "rate": 28.93}, {"number": "4.9", "area": 39.83, "rate": 35.52}]}, {"n": 3, "gla": 289.6, "type": "Office", "active": true, "units": [{"number": "3.1", "area": 19.77, "rate": 34.47}, {"number": "3.2", "area": 50, "rate": 33.27}, {"number": "3.3", "area": 37.56, "rate": 33.43}, {"number": "3.4", "area": 31.59, "rate": 35.52}, {"number": "3.5", "area": 31.59, "rate": 36.88}, {"number": "3.6", "area": 25.96, "rate": 28.93}, {"number": "3.7", "area": 37.93, "rate": 28.93}, {"number": "3.8", "area": 35.59, "rate": 28.93}, {"number": "3.9", "area": 19.61, "rate": 35.52}]}, {"n": 2, "gla": 446.69, "type": "Office", "active": true, "units": [{"number": "2.1.NE", "area": 124.78, "rate": 33.02}, {"number": "2.2.N", "area": 57.72, "rate": 33}, {"number": "2.3.N", "area": 65.7, "rate": 32.01}, {"number": "2.4.NW", "area": 15.08, "rate": 34.37}, {"number": "2.5", "area": 20.22, "rate": 35.69}, {"number": "2.6", "area": 12.12, "rate": 27.99}, {"number": "2.7", "area": 130.79, "rate": 27.99}, {"number": "2.8", "area": 9.04, "rate": 27.99}, {"number": "2.9", "area": 11.24, "rate": 34.37}]}, {"n": 1, "gla": 311.76, "type": "Front office / showroom", "active": true, "units": [{"number": "1.1", "area": 311.76, "rate": null}]}, {"n": -1, "gla": null, "type": "Tech. Rooms", "active": false, "units": []}, {"n": -2, "gla": null, "type": "Tech. Rooms", "active": false, "units": []}];
+function seedFloors(){return FLOORDATA.map(f=>({n:f.n,gla:f.gla,type:f.type,active:f.active,
+  units:(f.units||[]).map((u,i)=>({id:'u'+f.n+'_'+(i+1),number:u.number,area:u.area,rate:u.rate}))}));}
+function floorCfg(n){return (DB.floors||[]).find(f=>f.n===n)||{n,gla:0,type:'',active:true,units:[]};}
+function floorActive(n){return !!floorCfg(n).active;}
+function floorUnits(n){return floorCfg(n).units||[];}
+function unitOf(n,num){return floorUnits(n).find(u=>u.number===num)||null;}
+function floorAreaSum(f){return (f.units||[]).reduce((s,u)=>s+(+u.area||0),0);}
+function floorRateRange(f){const rs=(f.units||[]).map(u=>+u.rate).filter(x=>x>0);if(!rs.length)return '';const mn=Math.min(...rs),mx=Math.max(...rs);return mn===mx?('$'+mn):('$'+mn+'–$'+mx);}
+function dealRate(d){const a=d.agreedRate; return (a!=null && a!=='' && !isNaN(a) && +a>0) ? +a : (+d.rate||0);} // согласованная ставка приоритетнее базовой
+const money=n=>new Intl.NumberFormat('ru-RU').format(Math.round(n));
+const initials=s=>s.split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+
+let DB=null;
+const KEY='tower-crm-units-2026-06';
+
+function migrateDB(){ // приводит данные (из localStorage или из загруженной копии) к текущей модели
+  if(!DB) return;
+  DB.deals=DB.deals||[];
+  if(!DB.floors || DB.floors.some(f=>!f.units)) DB.floors=seedFloors(); // конфиг этажей/помещений — из текущей версии
+  DB.deals.forEach(d=>{
+    if(!d.tasks){ d.tasks=(d.nextStep||d.nextDate)?[{id:'t'+(d.id||'')+'m',text:d.nextStep||'Следующий шаг',date:d.nextDate||'',done:false}]:[]; }
+    if(d.units===undefined){ d.units = d.unit?[d.unit]:[]; }
+    if(d.agreedRate===undefined){ d.agreedRate=''; }
+    if(d.priority===undefined){ d.priority=''; }
+    if(d.scores===undefined){ d.scores={}; }
+    if(d.files===undefined){ d.files=[]; }
+  });
+}
+async function load(){
+  try{const r=localStorage.getItem(KEY); if(r){DB=JSON.parse(r);}}catch(e){}
+  if(DB){ migrateDB(); return; }
+  DB=seed();
+  await save();
+}
+async function save(){ try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){} }
+
+const PROSPECTS=[["KPMG Uzbekistan", "Аудит / Бизнес‑стратегия", "Ведущая международная консалтинговая и аудиторская сеть, входящая в «Большую четвёрку». Штаб-квартира: Лондон, Великобритания.", 5, 5, 5, 5, 4, 1], ["Ernst & Young (EY)", "Аудит / Консалтинг", "Глобальная компания, предоставляющая услуги в области аудита, налогов и консалтинга. Штаб-квартира: Лондон, Великобритания.", 5, 5, 5, 5, 4, 1], ["PwC Uzbekistan", "Аудит / финансы", "Крупнейшая сеть профессиональных услуг с высокой деловой репутацией. Штаб-квартира: Лондон, Великобритания.", 5, 5, 5, 5, 4, 1], ["BDO", "Аудит и консалтинг", "Международная сеть аудиторских и консалтинговых фирм, входящая в мировую десятку. Штаб-квартира: Брюссель, Бельгия.", 5, 5, 5, 5, 4, 1], ["Deloitte", "Аудит и консалтинг", "Один из крупнейших мировых лидеров в сфере аудита и консалтинга. Штаб-квартира: Лондон, Великобритания.", 5, 5, 5, 5, 4, 1], ["Beeline Uzbekistan", "Телеком", "Один из ведущих операторов мобильной связи и интернета. Штаб-квартира: Амстердам, Нидерланды.", 5, 5, 5, 5, 4, 1], ["TBC Bank Uzbekistan", "Финтех / банковский сектор", "Международный банк, внедряющий цифровые решения в финансовой сфере. Штаб-квартира: Тбилиси, Грузия.", 5, 5, 5, 5, 4, 1], ["United Energy Group", "Энергетическая компания", "Энергетическая компания, реализующая масштабные проекты в Центральной Азии. Штаб-квартира: Гонконг, Китай.", 5, 5, 5, 5, 4, 1], ["Kuehne+Nagel", "Транспорт и логистика", "Одна из крупнейших транспортно-логистических компаний мира. Штаб-квартира: Шинделлеги, Швейцария.", 4, 4, 5, 5, 4, 1], ["DB Schenker", "Транспорт и логистика", "Глобальный логистический оператор с широкой сетью по всему миру. Штаб-квартира: Эссен, Германия.", 4, 4, 5, 5, 4, 1], ["McKinsey & Company", "Стратегический консалтинг", "Одна из самых влиятельных стратегических консалтинговых компаний мира. Штаб-квартира: Нью-Йорк, США.", 4, 4, 5, 5, 4, 1], ["Lukoil", "Энергетика / нефть и газ", "Одна из крупнейших нефтяных компаний мира. Штаб-квартира: Москва, Россия.", 4, 4, 5, 5, 4, 1], ["Gazprom", "Энергетика / нефть и газ", "Крупнейшая газовая компания мира, лидер в энергетическом секторе. Штаб-квартира: Москва, Россия.", 4, 4, 5, 5, 4, 1], ["IBM", "IT и телеком", "Глобальная IT-корпорация, специализирующаяся на инновациях и аналитических решениях. Штаб-квартира: Армонк, США.", 4, 4, 5, 5, 4, 1], ["TotalEnergies", "Энергетика / нефть и газ", "Французская энергетическая компания с широкой сетью проектов по всему миру. Штаб-квартира: Париж, Франция.", 4, 4, 5, 5, 4, 1], ["EPAM Systems", "IT и телеком", "Мировой лидер в сфере IT-консалтинга и разработки программного обеспечения. Штаб-квартира: Ньютаун, США.", 4, 4, 5, 5, 4, 1], ["ZTE", "IT и телеком", "Китайская технологическая корпорация, производитель телекоммуникационного оборудования. Штаб-квартира: Шэньчжэнь, Китай.", 4, 4, 5, 5, 4, 1], ["World Bank + МФК", "Банк", "Международная финансовая организация, поддерживающая развитие стран. Штаб-квартира: Вашингтон, США.", 5, 5, 5, 5, 4, 1], ["Air Products (NYSE:APD)", "Промышленность", "Мировой поставщик промышленных газов и технологий. Штаб-квартира: Аллентаун, США.", 5, 5, 3, 5, 4, 1], ["Alvarez & Marsal", "Консалтинг", "Глобальная консалтинговая фирма, специализирующаяся на реструктуризации и управлении. Штаб-квартира: Нью-Йорк, США.", 4, 5, 3, 4, 5, 1], ["ADB", "Финансы/МФИ", "Азиатский банк развития, финансирующий инфраструктурные проекты. Штаб-квартира: Манила, Филиппины.", 5, 5, 3, 5, 5, 1], ["Centil Law Firm", "Юридические услуги", "Крупная юридическая фирма Центральной Азии. Штаб-квартира: Ташкент, Узбекистан.", 4, 5, 3, 4, 5, 1], ["Danone", "Производство/FMCG", "Мировой производитель молочных продуктов и детского питания. Штаб-квартира: Париж, Франция.", 5, 5, 4, 5, 4, 1], ["GE", "Промышленность/Технологии", "Американская промышленная корпорация, специализирующаяся на энергетических и авиационных технологиях. Штаб-квартира: Бостон, США.", 5, 5, 3, 5, 4, 1], ["DHL Express", "Логистика", "Подразделение DHL, специализирующееся на международной экспресс-доставке. Штаб-квартира: Бонн, Германия.", 5, 5, 4, 4, 4, 1], ["GRATA International", "Юридические услуги", "Международная юридическая фирма с офисами в СНГ и Европе. Штаб-квартира: Алматы, Казахстан.", 4, 5, 3, 4, 5, 1], ["IFC International Finance Corporation", "Финансы/МФИ", "Член группы Всемирного банка, поддерживающий частный сектор в развивающихся странах. Штаб-квартира: Вашингтон, США.", 5, 5, 3, 5, 5, 1], ["JPMorgan Chase & Co", "Банк", "Один из крупнейших инвестиционных банков мира. Штаб-квартира: Нью-Йорк, США.", 5, 5, 3, 5, 5, 1], ["Kinstellar", "Юридические услуги", "Международная юридическая фирма, специализирующаяся на корпоративном праве. Штаб-квартира: Прага, Чехия.", 4, 5, 3, 4, 5, 1], ["Oracle", "IT/Софт", "Американская IT-корпорация, лидер в области баз данных и облачных решений. Штаб-квартира: Остин, США.", 5, 5, 3, 5, 5, 1], ["OSCE", "Междунар. организация", "Организация по безопасности и сотрудничеству в Европе. Штаб-квартира: Вена, Австрия.", 5, 5, 3, 5, 5, 1], ["PepsiCo", "Производство/FMCG", "Мировой производитель напитков и закусок. Штаб-квартира: Нью-Йорк, США.", 5, 5, 4, 5, 4, 1], ["Unilever", "FMCG", "Международный производитель товаров повседневного спроса с сильными брендами. Штаб-квартира: Лондон, Великобритания.", 5, 5, 4, 5, 4, 1], ["BANK UZUM", "Банк/Финтех", "Современный цифровой банк, развивающий экосистему финтех-услуг. Штаб-квартира: Ташкент, Узбекистан.", 4, 5, 3, 4, 5, 1], ["Dentons", "Юридические услуги", "Крупнейшая юридическая фирма с глобальной сетью. Штаб-квартира: Лондон, Великобритания.", 5, 5, 3, 5, 5, 1], ["LG ELECTRONICS ПРЕДСТАВИТЕЛЬСТВО", "Электроника", "Международный производитель электроники и бытовой техники. Штаб-квартира: Сеул, Южная Корея.", 5, 5, 3, 5, 5, 1], ["POSCO DAEWOO CORPORATION ПРЕДСТАВИТЕЛЬСТВО", "Промышленность и торговля", "Корейская корпорация, специализирующаяся на торговле и строительстве. Штаб-квартира: Сеул, Южная Корея.", 5, 5, 3, 5, 5, 1], ["IBRD", "Международные организации", "Всемирный банк, финансирующий развитие и инфраструктуру. Штаб-квартира: Вашингтон, США.", 5, 5, 3, 5, 5, 1], ["IMF", "Международные организации", "Международный валютный фонд, обеспечивающий финансовую стабильность. Штаб-квартира: Вашингтон, США.", 5, 5, 3, 5, 5, 1], ["Nestle", "Товары повседневного спроса", "Мировой производитель продуктов питания и напитков. Штаб-квартира: Веве, Швейцария.", 5, 5, 4, 5, 4, 1], ["Otis", "Промышленность и оборудование", "Американская инженерная компания, производитель лифтов и эскалаторов. Штаб-квартира: Фармингтон, США.", 5, 5, 3, 5, 5, 1], ["Procter & Gamble", "Товары повседневного спроса", "Мировой производитель бытовой химии и гигиенических средств. Штаб-квартира: Цинциннати, США.", 5, 5, 4, 5, 4, 1], ["Roche", "Фармацевтика и диагностика", "Швейцарская компания, лидер в биотехнологиях и фармацевтике. Штаб-квартира: Базель, Швейцария.", 5, 5, 3, 5, 5, 1], ["Schneider Electric", "Информационные технологии и энергетика", "Французская компания, производитель электротехнического оборудования. Штаб-квартира: Рюэй-Мальмезон, Франция.", 5, 5, 3, 5, 5, 1], ["SGS", "Инспекция и сертификация", "Международная компания по инспекциям, тестированию и сертификации. Штаб-квартира: Женева, Швейцария.", 5, 5, 3, 5, 5, 1], ["Shell TM", "Энергетика", "Британская нефтегазовая компания, активно работающая в регионе. Штаб-квартира: Лондон, Великобритания.", 5, 5, 3, 5, 5, 1], ["Takeda", "Фармацевтика", "Японская фармацевтическая компания, известная инновационными разработками. Штаб-квартира: Токио, Япония.", 5, 5, 3, 5, 5, 1], ["ThyssenKrupp UZ", "Промышленность и инженерия", "Немецкий промышленный концерн, производитель лифтов и оборудования. Штаб-квартира: Эссен, Германия.", 5, 5, 3, 5, 5, 1], ["Toyota", "Автомобилестроение", "Мировой автопроизводитель с инновационными технологиями и высоким качеством, штаб в Тойота Сити", 5, 5, 3, 5, 5, 1], ["Samsung Uzbekistan", "Электроника / международн.", "Филиал южнокорейского технологического гиганта, штаб в Сеуле", 4, 4, 4, 4, 4, 1], ["Metro Cash & Carry", "B2B‑ритейл", "Международная сеть оптовой торговли, штаб в Дюссельдорфе", 4, 4, 3, 3, 4, 1], ["CNPC (China National Petroleum Corporation)", "Энергетика / нефть и газ", "Крупнейшая нефтегазовая корпорация Китая, штаб в Пекине", 3, 3, 4, 4, 4, 1], ["Franklin Templeton (Uz IPO)", "Финансы / инвестиции", "Международная инвестиционная компания с фокусом на развивающиеся рынки, штаб в Нью-Йорке", 4, 4, 3, 3, 4, 1], ["Eni", "Энергетика / нефть и газ", "Международная энергетическая компания, штаб в Риме", 3, 3, 4, 4, 4, 1], ["BP (British Petroleum)", "Энергетика / нефть и газ", "Один из мировых лидеров в нефтегазовой отрасли, штаб в Лондоне", 3, 3, 4, 4, 4, 1], ["Turkish Airlines", "Транспорт и логистика", "Национальный авиаперевозчик Турции, штаб в Стамбуле", 3, 3, 4, 4, 4, 1], ["SAP", "IT и телеком", "Глобальный лидер в корпоративных IT-решениях, штаб в Вальдорфе", 3, 3, 4, 4, 4, 1], ["Uzum", "E‑commerce / финтех", "Узбекская экосистема финтеха и маркетплейсов, штаб в Ташкенте", 3, 3, 3, 3, 3, 1], ["British American Tobacco Uzbekistan", "Производство", "Крупнейший производитель табачных изделий, штаб в Лондон", 4, 4, 4, 4, 3, 1], ["Huawei", "IT и телеком", "Один из крупнейших производителей телекоммуникационного оборудования, штаб в Шэньчжэне", 3, 3, 4, 4, 4, 1], ["UNDP (ООН)", "Международные организации", "Глобальная организация по развитию и устойчивым проектам, штаб в Нью-Йорке (ООН)", 3, 3, 2, 2, 2, 1], ["Volvo", "Автомобилестроение и техника", "Известный производитель премиальных автомобилей, штаб в Гётеборге", 5, 5, 3, 5, 5, 1], ["SSD Software Solutions", "ERP / IT‑интеграции", "IT-компания, предоставляющая программные решения и цифровизацию, штаб в Ташкенте", 4, 4, 4, 4, 4, 2], ["LeverX Uzbekistan", "SAP‑интеграции", "Международная IT-компания SAP-партнёр, предоставляющая консалтинг и внедрение ERP, штаб в Минске", 4, 4, 3, 4, 4, 2], ["Yandex Go (Ташкент)", "Такси / технологии", "Технологическая платформа по доставке и онлайн-сервисам, штаб в Москва", 4, 4, 3, 3, 4, 2], ["Navoi NMMC", "Горнодобывающая", "Ведущее горнодобывающее предприятие Узбекистана, штаб в Навои", 4, 4, 3, 3, 4, 2], ["Aksum Group", "Оборонка и технологии", "Консалтинговая и инвестиционная группа с проектами в Центральной Азии, штаб в Ташкенте", 4, 4, 3, 3, 4, 2], ["Renaissance Heavy Industries", "Девелоперы и инжиниринг", "Крупная международная строительная компания, штаб в Стамбуле", 4, 4, 3, 3, 4, 2], ["Pixsellz", "UI/UX дизайн", "Дизайн-студия и агентство цифровых продуктов, штаб в Вильнюсе", 4, 4, 3, 3, 4, 2], ["Sunbury Heights", "Строительство", "Инвестиционная и строительная компания, штаб в Ташкенте", 4, 4, 3, 4, 3, 2], ["MegaWatt Motors - BYD", "Авто", "Электромобильный бренд и дилер BYD, штаб в Ташкенте", 4, 4, 4, 4, 3, 2], ["ADUI", "Авто", "Дистрибьютор автозапчастей и техники, штаб в Ташкенте", 4, 4, 4, 4, 4, 2], ["AMERICAN COUNCILS", "Образование/НКО", "Образовательная некоммерческая организация, продвигающая академические обмены, штаб в Вашингтоне", 4, 4, 3, 4, 5, 2], ["balton TRADING ASIA / ООО «Балтон Трейдинг Азия»", "Дистрибуция", "Импортёр и торговая компания медицинских и промышленных товаров, штаб в Ташкенте", 4, 3, 4, 4, 3, 2], ["CNH Industrial", "Промышленность", "Международный производитель промышленного оборудования, штаб в Лондон", 4, 4, 4, 4, 4, 2], ["Crowe TAC", "Аудит/Консалтинг", "Международная аудиторская и консалтинговая сеть, штаб в Цюрихе", 4, 4, 3, 4, 5, 2], ["East-West Management Institute Inc", "НКО/Развитие", "Американская некоммерческая организация, реализующая программы развития, штаб в Нью-Йорке", 4, 4, 3, 4, 4, 2], ["MULTIVAC", "Производство", "Производитель упаковочного и пищевого оборудования, штаб в Германия", 4, 4, 3, 4, 4, 2], ["General Motor", "Авто", "Крупный автопроизводитель и инвестор, штаб в Детройт", 4, 5, 4, 4, 4, 2], ["Herbalife Nutrition", "FMCG/Wellness", "Международная компания по производству пищевых добавок и нутриентов, штаб в Лос-Анджелесе", 4, 4, 3, 4, 3, 2], ["Indorama", "Промышленность/Текстиль", "Крупнейший текстильный и химический холдинг Центральной Азии, штаб в Ташкенте", 4, 4, 4, 4, 4, 2], ["ИНГО-УЗБЕКИСТАН", "Страхование", "Страховая компания, предоставляющая широкий спектр услуг, штаб в Ташкенте", 4, 4, 3, 4, 4, 2], ["Inmunotek", "Фарма/Био", "Биотехнологическая компания, специализирующаяся на иммунологии, штаб в Мадриде", 4, 4, 3, 4, 4, 2], ["KAFOLAT", "Страхование", "Крупнейшая страховая компания Узбекистана, штаб в Ташкенте", 4, 4, 3, 4, 4, 2], ["LEGALMAX", "Юридические услуги", "Патентно-юридическая фирма, специализирующаяся на интеллектуальной собственности, штаб в Ташкенте", 4, 4, 3, 4, 5, 2], ["LEGATE", "Юридические услуги", "Юридическая фирма с международной практикой, штаб в Ташкенте", 3, 4, 3, 4, 5, 2], ["PraeLegal Uzbekistan", "Юридические услуги", "Юридическая ассоциация с международной сетью партнёров, штаб в Ташкенте", 3, 4, 3, 4, 5, 2], ["UHY Tashkent", "Аудит/Консалтинг", "Международная аудиторская и консалтинговая фирма, штаб в Лондон", 4, 4, 3, 4, 5, 2], ["UOIC UZBEK-OMAN INVESTENT COMPANY", "Инвестиции", "Инвестиционная компания, основанная правительствами Узбекистана и Омана, штаб в Маскат", 4, 4, 3, 4, 5, 2], ["ROAD INTERNATIONAL CO., LTD ПРЕДСТАВИТЕЛЬСТВО", "Логистика и торговля", "Представительство крупнейшей авиакомпании Кореи, штаб в Сеуле", 4, 4, 3, 4, 4, 2], ["SEOJOONG LOGISTICS GROUP ООО", "Логистика", "Логистическая компания, обеспечивающая международные перевозки, штаб в Сеуле", 4, 4, 4, 4, 4, 2], ["UNICO LOGISTIC ПРЕДСТАВИТЕЛЬСТВО", "Логистика", "Транспортно-логистическая компания, работающая в регионе, штаб в Сеуле", 4, 4, 3, 4, 5, 2], ["WOOJIN GLOBAL LOGISTICS ПРЕДСТАВИТЕЛЬСТВО", "Логистика", "Международный логистический оператор, штаб в Ташкенте", 4, 4, 3, 4, 5, 2], ["ZEPPELIN CENTRAL ASIA MACHINERY ИП ООО", "Промышленное оборудование", "Крупная логистическая компания, обеспечивающая поставки техники, штаб в Ташкенте", 4, 4, 4, 4, 4, 2], ["JTI", "Товары повседневного спроса", "Ведущая международная табачная компания с локальным производством, штаб в Японии", 4, 4, 3, 4, 4, 2], ["Ozon", "Интернет и ритейл", "Один из крупнейших маркетплейсов СНГ, онлайн-ритейл и логистика последней мили, штаб в России", 4, 4, 4, 4, 4, 2], ["Stada", "Фармацевтика", "Международная фармацевтическая компания с собственным производством лекарств, штаб в Германии", 4, 4, 3, 4, 5, 2], ["TMF Group", "Профессиональные услуги", "Глобальный провайдер корпоративных, бухгалтерских и fiduciary-услуг, штаб в Нидерландах", 4, 4, 3, 4, 5, 2], ["Didox", "IT‑стартап / SaaS", "IT-стартап, автоматизация B2B-документооборота и API-решений, штаб в Казахстане", 3, 3, 3, 3, 3, 3], ["Exadel Tashkent", "IT‑разработка", "Локальный R&D-центр американской IT-компании, штаб в США", 3, 3, 3, 3, 3, 3], ["Dataprizma", "Аналитика / BI", "Разработка аналитических платформ, дашбордов и BI-решений, штаб в Узбекистане", 3, 3, 3, 3, 3, 3], ["MAN Auto-Uzbekistan", "Коммерческий транспорт", "Совместное предприятие с MAN по сборке автобусов и грузовиков, штаб в Узбекистане", 3, 3, 2, 3, 2, 3], ["Alif Uzbekistan", "Финтех", "Таджикско-узбекский BNPL-сервис и сильный региональный финтех-бренд, штаб в Таджикистане", 3, 3, 2, 3, 2, 3], ["Coca‑Cola Uzbekistan", "Напитки", "Фабрика напитков в Узбекистане, часть глобального бренда, штаб в США", 3, 3, 2, 3, 2, 3], ["ZOOD (ZOOD Pay / Mall)", "E‑commerce / маркетплейс", "Быстрорастущий онлайн-ритейл и BNPL-платформа, штаб в Узбекистане", 3, 3, 2, 2, 2, 3], ["IMAN Group Ltd.", "Исламский финтех", "Первый халяль-финтех в Узбекистане, штаб в Ташкенте", 3, 3, 2, 2, 2, 3], ["Eurosoft LLC", "Программное обеспечение", "Специалисты по корпоративным IT-решениям и enterprise-разработке, штаб в Узбекистане", 3, 3, 2, 2, 2, 3], ["Growz", "HR‑тех / рекрутинг", "Экосистема для найма, рекрутинга и карьерного трекинга, штаб в Узбекистане", 3, 3, 2, 2, 2, 3], ["Litro", "Сервис", "Сеть автосервисов и технического обслуживания, штаб в Узбекистане", 3, 3, 4, 3, 3, 3], ["SAM AUTO", "Авто", "Дилерский центр и сервис по продаже автомобилей, штаб в Узбекистане", 4, 3, 4, 4, 3, 3], ["ООО «AFS-Research»", "Исследования/Маркетинг", "Агентство маркетинговых и социологических исследований, штаб в Узбекистане", 3, 3, 3, 3, 3, 3], ["DNA", "IT", "Цифровые IT-решения и системная интеграция, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["ООО «АПЕКС СТРАХОВАНИЕ»", "Страхование", "Страховая компания с широким спектром услуг для бизнеса и частных клиентов, штаб в Узбекистане", 3, 3, 3, 4, 4, 3], ["Black Swan Consulting", "Консалтинг", "Стратегический и управленческий консалтинг, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["BNZ SWISS CENTER", "Услуги/Бизнес-центр", "Деловой центр с международным позиционированием, штаб в Узбекистане", 3, 3, 4, 4, 4, 3], ["Brunel", "HR/Рекрутинг", "Международный рекрутинговый оператор в инженерных и промышленных секторах, штаб в Нидерландах", 3, 4, 3, 3, 4, 3], ["CIS Education Group", "Образование", "Образовательные консультации и языковые программы за рубежом, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["COMMONWEALTH PARTNERSHIP", "Консалтинг/Юр.", "Юридический и бизнес-консалтинг для корпоративных клиентов, штаб в Великобритании", 3, 3, 3, 3, 4, 3], ["Dalatek", "IT/Интеграция", "Системная интеграция и IT-услуги для корпоративного сектора, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["DaVinci Management Consulting", "Консалтинг", "Управленческий и стратегический консалтинг, штаб в Узбекистане", 3, 4, 3, 3, 4, 3], ["Delta Global Solutions", "Логистика/Таможня", "Логистические и таможенные брокерские услуги, штаб в Узбекистане", 3, 3, 4, 4, 3, 3], ["FCB ARTGROUP", "Реклама/Маркетинг", "Креативное агентство и маркетинговые коммуникации, штаб в Узбекистане", 3, 4, 3, 3, 4, 3], ["Global Translation Service", "Переводы", "Бюро переводов и локализации для бизнеса, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["Holis Group", "IT/Консалтинг", "IT-консалтинг и внедрение цифровых решений, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["GREEN LIGHT ITS", "IT/Безопасность", "Системы информационной безопасности и интеграция, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["HAJ TEX", "Текстиль", "Текстильное производство и экспорт продукции, штаб в Узбекистане", 3, 3, 4, 4, 3, 3], ["Islohotkonsaltservis", "Консалтинг", "Бизнес-консалтинг и корпоративное обучение, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["ООО «СП Трансконтиненталь»", "Логистика", "Транспортно-логистическая компания с международными перевозками, штаб в Узбекистане", 3, 3, 4, 4, 3, 3], ["ООО «Lean Trade Solutions»", "Логистика/Снабжение", "Поставки и логистические услуги для промышленных клиентов, штаб в Узбекистане", 3, 3, 4, 4, 3, 3], ["ИП ООО «Медикал Онлайн Сервис» / MEDOL", "Медицина/Дистрибуция", "Медицинское оборудование и сервисные решения, штаб в Узбекистане", 3, 3, 4, 4, 4, 3], ["MOSAIC FINANCIAL", "Финансы", "Финансовые услуги и консалтинг для корпоративных клиентов, штаб в Узбекистане", 3, 3, 3, 4, 4, 3], ["MOSAIC INSURANCE GROUP АО ИО", "Страхование", "Страховые и перестраховочные услуги, штаб в Узбекистане", 3, 3, 3, 4, 4, 3], ["OneVizion CA", "IT", "Платформа управления проектами и корпоративными данными, штаб в Узбекистане", 3, 3, 3, 4, 4, 3], ["Promostock", "Реклама/BTL", "Промо-активности, мерчандайзинг и BTL-кампании, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["QBA IT", "IT", "Интеграция и разработка программного обеспечения, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["United Marketing", "Маркетинг", "Маркетинговое агентство и BTL-проекты, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["WCH Service Bureau", "BPO/Услуги", "Сервис-центр аутсорсинговых услуг и обработки данных, штаб в Узбекистане", 3, 3, 3, 4, 4, 3], ["Wings Distribution", "Дистрибуция", "Дистрибуция товаров и брендированных продуктов, штаб в Узбекистане", 3, 3, 4, 4, 3, 3], ["Freedom Broker", "Финансовые услуги", "Международная брокерская компания и инвестиционный сервис, штаб в Казахстане", 3, 4, 3, 3, 5, 3], ["GST OIL ООО", "Нефть и газ", "Нефтяная компания с операционной деятельностью на локальном рынке, штаб в Узбекистане", 3, 3, 4, 3, 3, 3], ["RUDMASH EXPORT SERVICE ООО", "Промышленность и экспорт", "Экспортная компания промышленной продукции, штаб в Узбекистане", 3, 3, 4, 3, 3, 3], ["EXIM AGRO", "Сельское хозяйство и экспорт", "Экспорт и торговля аграрной продукцией, штаб в Узбекистане", 3, 3, 4, 3, 3, 3], ["Gold Dried Fruits Export LLC", "Пищевая промышленность", "Производство и экспорт сушёных фруктов, штаб в Узбекистане", 3, 3, 4, 3, 3, 3], ["AGROVER KIMALINE ООО", "Сельское хозяйство и переработка", "Производство и переработка аграрной продукции, штаб в Узбекистане", 4, 3, 4, 4, 3, 3], ["ABR", "Консалтинг и услуги", "Консалтинговые и профессиональные услуги для бизнеса, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["Antal", "Кадровые услуги", "Международное рекрутинговое агентство, штаб в Великобритании", 3, 4, 3, 3, 5, 3], ["Comtechoff", "Информационные технологии", "Компания по разработке программного обеспечения и интеграции, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["Integro", "Консалтинг и технологии", "Консалтинговые и технологические услуги для бизнеса, штаб в Узбекистане", 3, 3, 3, 3, 4, 3], ["Practic", "Профессиональные услуги", "Консалтинговые и образовательные услуги для бизнеса, штаб в Узбекистане", 3, 3, 3, 3, 4, 3]];
+function seed(){
+  const today=Date.now();
+  const deals=PROSPECTS.map((p,i)=>{
+    const [tenant,industry,basis,fin,image,demand,longterm,classA,prio]=p;
+    const created=today-i*60000;
+    return {id:'d'+(i+1),tenant,industry,email:'',phone:'',stage:'lead',temp:'cold',
+      floor:0,units:[],area:0,rate:0,agreedRate:'',term:0,basis:basis||'',note:'',priority:prio,
+      scores:{fin,image,demand,longterm,classA},created,updated:created,tasks:[],
+      acts:[{type:'create',t:'Добавлен из списка приоритетов',ts:created}]};
+  });
+  return {deals,floors:seedFloors()};
+}
+
+function isoDays(ago){const d=new Date(Date.now()-ago*86400000);return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'short'});}
+function fmtDate(ts){return new Date(ts).toLocaleDateString('ru-RU',{day:'2-digit',month:'short'});}
+function ymd(d){const x=d||new Date();const m=String(x.getMonth()+1).padStart(2,'0');const day=String(x.getDate()).padStart(2,'0');return x.getFullYear()+'-'+m+'-'+day;}
+function fmtDay(s){if(!s)return '';const x=new Date(s+'T00:00:00');return x.toLocaleDateString('ru-RU',{day:'2-digit',month:'short'});}
+function ddmmyy(ts){const d=new Date(ts);const p=n=>String(n).padStart(2,'0');return p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2);}
+function weekBuckets(n){
+  const now=new Date();
+  const dow=(now.getDay()+6)%7;                 // 0 = понедельник
+  const thisMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow).getTime();
+  const W=7*86400000, out=[];
+  for(let i=n-1;i>=0;i--){const start=thisMon-i*W; out.push({start,end:start+W,label:fmtDate(start)});}
+  return out;
+}
+function actIcon(t){return {meeting:'👥',call:'📞',tour:'🏢',won:'✓',create:'＋',stage:'↗',note:'💬',task:'🗓',done:'✅'}[t]||'•';}
+
+/* ---------- routing ---------- */
+const titles={dash:['Дашборд','Сводка по заполняемости и динамике сделок'],
+  tasks:['Задачи','Что нужно сделать: просрочено, сегодня, предстоящие'],
+  pipe:['Воронка сделок','Перетаскивайте карточки между этапами'],
+  tenants:['Арендаторы','Все контакты и статусы сделок'],
+  floors:['Карта статусов','Помещения по этажам: бронь, в процессе, свободно'],
+  config:['Исходные данные','Площадь и ставка $/кв.м по зонам (стороны окон) для каждого этажа']};
+function go(v){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('vTitle').textContent=titles[v][0];
+  document.getElementById('vSub').textContent=titles[v][1];
+  document.getElementById('side').classList.remove('show');
+  render(v);
+}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.v);});
+
+function render(v){
+  if(v==='dash')renderDash();
+  if(v==='tasks')renderTasks();
+  if(v==='pipe')renderPipe();
+  if(v==='tenants')renderTenants();
+  if(v==='floors')renderFloors();
+  if(v==='config')renderConfig();
+}
+
+/* ---------- metrics ---------- */
+function metrics(){
+  const d=DB.deals;
+  const won=d.filter(x=>x.stage==='won'&&floorActive(x.floor));
+  const active=d.filter(x=>x.stage!=='won');
+  const occM2=won.reduce((s,x)=>s+x.area,0);
+  const totalM2=(DB.floors||[]).filter(f=>f.active).reduce((s,f)=>s+(f.gla||floorAreaSum(f)),0)||1;
+  const pipelineVal=active.reduce((s,x)=>s+x.area*dealRate(x),0);
+  const wonVal=won.reduce((s,x)=>s+x.area*dealRate(x),0);
+  const weighted=active.reduce((s,x)=>{
+    const w={lead:.1,qual:.25,tour:.45,loi:.65,nego:.85}[x.stage]||0;
+    return s+x.area*dealRate(x)*w;
+  },0);
+  return {won,active,occM2,totalM2,occPct:Math.round(occM2/totalM2*100),
+    pipelineVal,wonVal,weighted,
+    hot:active.filter(x=>x.temp==='hot').length};
+}
+
+/* ---------- period (за месяц / квартал) ---------- */
+let PERIOD='month';
+function periodRange(p){
+  const now=new Date();
+  if(p==='all') return {start:0,end:now.getTime()+86400000,label:'за всё время'};
+  if(p==='quarter'){
+    const q=Math.floor(now.getMonth()/3);
+    const start=new Date(now.getFullYear(),q*3,1).getTime();
+    return {start,end:now.getTime()+86400000,label:'за '+['I','II','III','IV'][q]+' квартал '+now.getFullYear()};
+  }
+  const start=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  return {start,end:now.getTime()+86400000,label:'за '+now.toLocaleDateString('ru-RU',{month:'long'})+' '+now.getFullYear()};
+}
+function periodStats(r){
+  const acts=DB.deals.flatMap(d=>d.acts||[]);
+  const meetings=acts.filter(a=>a&&a.type==='meeting'&&a.ts>=r.start&&a.ts<r.end).length;
+  const signed=DB.deals.filter(d=>d.stage==='won'&&(d.signedAt||d.updated||0)>=r.start&&(d.signedAt||d.updated||0)<r.end);
+  return {meetings,signedCount:signed.length,
+    signedArea:signed.reduce((s,d)=>s+d.area,0),
+    signedVal:signed.reduce((s,d)=>s+d.area*dealRate(d),0),
+    newDeals:DB.deals.filter(d=>(d.created||0)>=r.start&&(d.created||0)<r.end).length};
+}
+function setPeriod(p){PERIOD=p;renderDash();}
+function periodPanelHTML(){
+  const r=periodRange(PERIOD), s=periodStats(r);
+  const chip=(p,t)=>`<button class="chip ${PERIOD===p?'on':''}" onclick="setPeriod('${p}')">${t}</button>`;
+  const row=(v,l)=>`<div class="pstat-row"><div class="pv num">${v}</div><div class="pl">${l}</div></div>`;
+  return `<div class="panel">
+    <div class="panel-h" style="flex-wrap:wrap;gap:8px 10px"><h3>Итоги <span class="hint" style="font-weight:500">· ${r.label.replace(/^за /,'')}</span></h3>
+      <div class="seg-chips">${chip('month','Месяц')}${chip('quarter','Квартал')}${chip('all','Всё')}</div>
+    </div>
+    <div class="panel-b" style="padding-top:8px">
+      ${row(s.signedCount,'договоров подписано')}
+      ${row(money(s.signedArea)+' м²','площадь сдана')}
+      ${row('$'+money(s.signedVal),'доход добавлен, $/мес')}
+      ${row(s.meetings,'встреч проведено')}
+      ${row(s.newDeals,'новых сделок')}
+    </div>
+  </div>`;
+}
+
+/* ---------- классическая воронка ---------- */
+function funnelSVG(stages){
+  const n=stages.length, W=520, bandH=33, padTop=4, padBot=4, cx=W/2;
+  const H=padTop+padBot+n*bandH;
+  const maxHalf=104, endHalf=20;            // строго прямые грани: верх широкий, низ узкий
+  const top=padTop, bot=H-padBot, span=bot-top;
+  const halfAt=y=> maxHalf-(maxHalf-endHalf)*((y-top)/span);  // ширина на любой высоте лежит на одной прямой
+  let out='';
+  for(let i=0;i<n;i++){
+    const yTop=top+i*bandH, yBot=yTop+bandH;
+    const hT=halfAt(yTop), hB=halfAt(yBot);
+    const yc=(yTop+yBot)/2+4;
+    out+=`<path d="M${(cx-hT).toFixed(2)} ${yTop.toFixed(2)} L${(cx+hT).toFixed(2)} ${yTop.toFixed(2)} L${(cx+hB).toFixed(2)} ${yBot.toFixed(2)} L${(cx-hB).toFixed(2)} ${yBot.toFixed(2)} Z" fill="${stages[i].color}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>`;
+    out+=`<text x="${cx}" y="${yc}" text-anchor="middle" font-family="Inter,sans-serif" font-weight="600" font-size="12" fill="#fff">${stages[i].n||''}</text>`;
+    out+=`<text x="${(cx-maxHalf-13).toFixed(0)}" y="${yc}" text-anchor="end" font-family="Inter,sans-serif" font-size="12.5" font-weight="500" fill="#54677a">${stages[i].name}</text>`;
+    out+=`<text x="${(cx+maxHalf+13).toFixed(0)}" y="${yc}" text-anchor="start" font-family="Space Grotesk,sans-serif" font-size="13" font-weight="600" fill="#0e1b2a">$${money(stages[i].val)}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:495px;height:auto;display:block">${out}</svg>`;
+}
+
+/* ---------- tasks (что делать) ---------- */
+function taskRowHTML2(x,tagCls,tagTxt){
+  const d=x.d,t=x.t;
+  return `<div class="task" onclick="openDeal('${d.id}')">
+    <button class="te-check" title="Отметить выполненной" onclick="event.stopPropagation();markTaskDone('${d.id}','${t.id}')"></button>
+    <span class="task-tag ${tagCls}">${tagTxt}</span>
+    <div class="task-main"><div class="task-t">${esc(t.text)}</div>
+      <div class="task-sub">${esc(d.tenant)}${d.floor>=1?' · этаж '+d.floor:''}</div></div>
+    <span class="temp ${d.temp}">${TEMPS[d.temp]}</span>
+  </div>`;
+}
+async function markTaskDone(did,tid){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  const t=(d.tasks||[]).find(x=>x.id===tid); if(!t||t.done)return;
+  t.done=true; t.doneAt=Date.now();
+  (d.acts=d.acts||[]).unshift({type:'done',t:'Выполнено: '+t.text,ts:Date.now(),note:t.comment||''});
+  d.updated=Date.now(); await save();
+  const cur=document.querySelector('.nav button.active')?.dataset.v; if(cur)render(cur);
+}
+function renderTasks(){
+  const el=document.getElementById('view-tasks');
+  const today=ymd();
+  const items=[];
+  DB.deals.filter(d=>d.stage!=='won').forEach(d=>{(d.tasks||[]).filter(t=>!t.done).forEach(t=>items.push({d,t}));});
+  const wd=items.filter(x=>x.t.date);
+  const overdue=wd.filter(x=>x.t.date<today).sort((a,b)=>a.t.date.localeCompare(b.t.date));
+  const todayI=wd.filter(x=>x.t.date===today);
+  const future=wd.filter(x=>x.t.date>today).sort((a,b)=>a.t.date.localeCompare(b.t.date));
+  const noDate=items.filter(x=>!x.t.date);
+  const noPlan=DB.deals.filter(d=>d.stage!=='won'&&!(d.tasks||[]).some(t=>!t.done)).length;
+  const sec=(title,list,fn,accent)=> list.length?`<div class="panel" style="margin-bottom:18px">
+    <div class="panel-h"><h3>${title}</h3><span class="hint">${list.length}</span></div>
+    <div class="panel-b"><div class="tasklist">${list.map(x=>{const t=fn(x);return taskRowHTML2(x,t.cls,t.txt);}).join('')}</div></div></div>`:'';
+  el.innerHTML=`
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="kpi-accent" style="background:var(--hot)"></div><div class="lab">Просрочено</div><div class="val num">${overdue.length}</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--amber)"></div><div class="lab">Сегодня</div><div class="val num">${todayI.length}</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--steel-500)"></div><div class="lab">Всего открытых</div><div class="val num">${items.length}</div><div class="delta">сделок без задач: ${noPlan}</div></div>
+    </div>
+    ${sec('🔴 Просрочено',overdue,()=>({cls:'late',txt:'просрочено'}))}
+    ${sec('🟡 Сегодня',todayI,()=>({cls:'now',txt:'сегодня'}))}
+    ${sec('Предстоящие',future,x=>({cls:'soon',txt:fmtDay(x.t.date)}))}
+    ${sec('Без срока',noDate,()=>({cls:'soon',txt:'без даты'}))}
+    ${items.length?'':'<div class="panel"><div class="panel-b"><div class="muted" style="padding:18px">Открытых задач нет. Откройте сделку и добавьте задачу в блоке «Планы и задачи».</div></div></div>'}`;
+}
+
+/* ---------- DASH ---------- */
+function renderDash(){
+  const m=metrics();
+  const stageCounts=STAGES.map(s=>({...s,n:DB.deals.filter(d=>d.stage===s.id).length,
+    val:DB.deals.filter(d=>d.stage===s.id).reduce((a,d)=>a+d.area*dealRate(d),0)}));
+  const maxN=Math.max(...stageCounts.map(s=>s.n),1);
+
+  // per-floor tenant lists (a floor can host several tenants)
+  const floorTenants={};
+  DB.deals.forEach(d=>{(floorTenants[d.floor]=floorTenants[d.floor]||[]).push(d);});
+
+  // decorative windows for the building illustration (skip the middle band)
+  let bwins='';
+  for(let y=48;y<=560;y+=21){
+    if(y>236 && y<392) continue;
+    for(const x of [44,71,98]) bwins+=`<rect x="${x}" y="${y}" width="18" height="11" rx="1.5" fill="rgba(205,217,228,.32)"/>`;
+  }
+  const occW=Math.round(56*m.occPct/100);
+  const segColor=st=> st==='won'?'var(--won)':((st==='nego'||st==='loi')?'var(--amber)':'var(--cold)');
+  const statusWord=st=> st==='won'?'Занято':((st==='nego'||st==='loi')?'Переговоры':'В работе');
+
+  // weekly activity + leased-area dynamics
+  const weeks=weekBuckets(8);
+  const allActs=DB.deals.flatMap(d=>d.acts||[]);
+  const meetCounts=weeks.map(w=>allActs.filter(a=>a&&a.type==='meeting'&&a.ts>=w.start&&a.ts<w.end).length);
+  const maxMeet=Math.max(...meetCounts,1);
+  const totalMeet=meetCounts.reduce((a,b)=>a+b,0);
+  const wonDeals=DB.deals.filter(d=>d.stage==='won');
+  const cumArea=weeks.map(w=>wonDeals.filter(d=>(d.signedAt||d.updated||0)<w.end).reduce((s,d)=>s+d.area,0));
+  const weeklyCharts=weeklyChartsHTML(weeks,meetCounts,maxMeet,totalMeet,cumArea);
+
+  const el=document.getElementById('view-dash');
+  el.innerHTML=`
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-accent" style="background:var(--won)"></div>
+        <div class="lab">Заполняемость площадей</div>
+        <div class="val num">${m.occPct}<small>%</small></div>
+        <div class="delta up">Занято ${money(m.occM2)} м² из ${money(m.totalM2)} м²</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--amber)"></div>
+        <div class="lab">Сделок в работе</div>
+        <div class="val num">${m.active.length}</div>
+        <div class="delta">горячих сделок: ${m.hot}</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--steel-500)"></div>
+        <div class="lab">Потенциал воронки</div>
+        <div class="val num">$${money(m.pipelineVal)}<small> /мес</small></div>
+        <div class="delta">взвеш. прогноз $${money(m.weighted)}/мес</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--hot)"></div>
+        <div class="lab">Закреплённый доход</div>
+        <div class="val num">$${money(m.wonVal)}<small> /мес</small></div>
+        <div class="delta up">по ${m.won.length} подписанным договорам</div></div>
+    </div>
+
+    <div class="grid3">
+      ${periodPanelHTML()}
+      <div class="panel">
+        <div class="panel-h"><h3>Воронка по этапам</h3><span class="hint">кол-во · доход $/мес</span></div>
+        <div class="panel-b">${funnelSVG(stageCounts)}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Статус сделок</h3><span class="hint">по «температуре»</span></div>
+        <div class="panel-b">${tempBreakdown()}</div>
+      </div>
+    </div>
+
+    ${weeklyCharts}
+
+    <div class="panel">
+      <div class="panel-h"><h3>Карта здания</h3><span class="hint">ширина полосы = площадь · $ — ставка за кв.м/мес</span></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--won)"></i>Занято</span>
+        <span><i class="dot" style="background:var(--amber)"></i>В переговорах</span>
+        <span><i class="dot" style="background:var(--cold)"></i>В работе</span>
+        <span><i class="dot" style="background:var(--paper-2)"></i>Свободно</span>
+      </div>
+      <div class="panel-b"><div class="bmap">
+        <div class="building">
+          <svg viewBox="0 0 162 612" xmlns="http://www.w3.org/2000/svg">
+            <line x1="81" y1="6" x2="81" y2="30" stroke="var(--steel-500)" stroke-width="2"/>
+            <circle cx="81" cy="6" r="3" fill="var(--amber)"/>
+            <rect x="31" y="30" width="100" height="566" rx="5" fill="var(--steel-700)"/>
+            <rect x="31" y="30" width="13" height="566" rx="5" fill="rgba(255,255,255,.06)"/>
+            <rect x="118" y="30" width="13" height="566" fill="rgba(0,0,0,.10)"/>
+            ${bwins}
+            <rect x="38" y="250" width="86" height="128" rx="9" fill="#ffffff" stroke="rgba(14,27,42,.10)"/>
+            <text x="81" y="300" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="33" fill="var(--steel-900)">${m.occPct}%</text>
+            <text x="81" y="320" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="var(--ink-soft)">площадь занята</text>
+            <rect x="53" y="334" width="56" height="6" rx="3" fill="var(--paper-2)"/>
+            <rect x="53" y="334" width="${occW}" height="6" rx="3" fill="var(--won)"/>
+            <text x="81" y="362" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="var(--ink-soft)">${money(m.occM2)} / ${money(m.totalM2)} м²</text>
+            <rect x="64" y="572" width="34" height="24" rx="2" fill="var(--steel-900)"/>
+            <rect x="79" y="578" width="4" height="18" fill="rgba(255,255,255,.15)"/>
+          </svg>
+        </div>
+        <div class="stack">
+        ${[...DB.floors].sort((a,b)=>a.n-b.n).map(fc=>{
+          const f=fc.n;
+          if(!fc.active){
+            return `<div class="floor inactive" title="Этаж ${f} — не продаётся (исключён из расчётов)">
+              <div class="fl-tog"><button class="tog off" title="Включить этаж в расчёты" onclick="toggleFloor(${f})"></button></div>
+              <div class="fl-n num">${f}</div>
+              <div class="fl-occ free">—</div>
+              <div class="fl-pills"><span class="pl pl-off">Не продаётся</span></div>
+              <div class="fl-bar fl-bar-off"></div>
+            </div>`;
+          }
+          const cap=fc.gla||floorAreaSum(fc);
+          const fdeals=(floorTenants[f]||[]);
+          // «первый» претендент на помещение: подписанный приоритетнее, иначе самый ранний по дате создания
+          const primaryOf=cl=>cl.find(x=>x.stage==='won')||cl.slice().sort((a,b)=>(a.created||0)-(b.created||0))[0];
+          // распределяем помещения по «первому» претенденту — бар рисует только он
+          const groups=[]; const byDeal={}; let occArea=0;
+          (fc.units||[]).forEach(u=>{
+            const cl=fdeals.filter(d=>(d.units||[]).includes(u.number));
+            if(!cl.length) return;                       // помещение свободно
+            occArea+=(+u.area||0);
+            const prim=primaryOf(cl);
+            let g=byDeal[prim.id];
+            if(!g){g={deal:prim,units:[],area:0,maxComp:0}; byDeal[prim.id]=g; groups.push(g);}
+            g.units.push(u.number); g.area+=(+u.area||0);
+            const comp=cl.filter(d=>d.stage!=='won').length;   // сколько арендаторов претендуют (не подписано)
+            if(comp>g.maxComp) g.maxComp=comp;
+          });
+          const sum=occArea;
+          const denom=Math.max(cap,sum)||1;
+          let acc=0; const badges=[];
+          const segs=groups.map(g=>{
+            const d=g.deal, w=g.area/denom*100;
+            const txt = w>=22 ? `${esc(d.tenant)} · ${money(g.area)} кв.м · $${dealRate(d)}`
+                      : w>=12 ? `${esc(d.tenant)} · ${money(g.area)} кв.м`
+                      : w>=4  ? esc(d.tenant) : '';
+            if(g.maxComp>=2) badges.push({center:acc+w/2, n:g.maxComp});
+            acc+=w;
+            return `<i class="seg" style="width:${w}%;background:${segColor(d.stage)}" title="${esc(d.tenant)} · ${money(g.area)} кв.м · ставка $${dealRate(d)}/кв.м·мес · ${statusWord(d.stage)}${g.maxComp>=2?` · претендентов: ${g.maxComp}`:''}" onclick="event.stopPropagation();openDeal('${d.id}')">${txt}</i>`;
+          }).join('');
+          const occF = groups.length? Math.round(sum/denom*100) : 0;
+          const used = Math.min(sum,cap);
+          const free = Math.max(0,cap-sum);
+          const badgeHTML=badges.map(b=>`<div class="comp-badge" style="left:${b.center}%" title="Спорные помещения — нажмите, чтобы посмотреть претендентов" onclick="event.stopPropagation();openContest(${f})">${b.n}</div>`).join('');
+          return `<div class="floor" title="Этаж ${f} — занято ${occF}%">
+            <div class="fl-tog"><button class="tog" title="Исключить этаж из расчётов" onclick="toggleFloor(${f})"></button></div>
+            <div class="fl-n num">${f}</div>
+            <div class="fl-occ num ${groups.length?'':'free'}">${groups.length?occF+'%':'—'}</div>
+            <div class="fl-pills">
+              ${used>0?`<span class="pl pl-occ">Занято: ${money(used)} кв.м</span>`:''}
+              <span class="pl pl-free">Свободно: ${money(free)} кв.м</span>
+            </div>
+            <div class="fl-bar-wrap">
+              <div class="fl-bar" onclick="${groups.length?`openFloor(${f})`:"go('floors')"}">${segs}</div>
+              ${badgeHTML}
+            </div>
+          </div>`;
+        }).join('')}
+        </div>
+      </div></div>
+    </div>`;
+}
+function tempBreakdown(){
+  const act=DB.deals.filter(d=>d.stage!=='won');
+  const tot=act.length||1;
+  const order=[['hot','var(--hot)'],['warm','var(--amber)'],['cold','var(--cold)']];
+  return `<div class="funnel" style="padding-top:8px">${order.map(([k,c])=>{
+    const list=act.filter(d=>d.temp===k);
+    const val=list.reduce((a,d)=>a+d.area*dealRate(d),0);
+    return `<div class="frow">
+      <div class="name">${TEMPS[k]}</div>
+      <div class="track"><div class="fill" style="width:${Math.max(list.length/tot*100,list.length?10:0)}%;background:${c}">${list.length||''}</div></div>
+      <div class="cnt num">$${money(val)}</div></div>`;
+  }).join('')}
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-soft);line-height:1.6">
+  Горячие сделки требуют действия в ближайшие дни — именно скорость реакции определяет долю закрытых договоров.</div></div>`;
+}
+
+function weeklyChartsHTML(weeks,meetCounts,maxMeet,totalMeet,cumArea){
+  // общая геометрия для обоих графиков — чтобы оси X были на одном уровне
+  const W=520,H=180,padX=20,padTop=26,padBot=24, n=weeks.length;
+  const px=i=> padX+(W-2*padX)*(n>1?i/(n-1):0);
+  const baseY=H-padBot;
+  const axis=`<line x1="${padX}" y1="${baseY}" x2="${W-padX}" y2="${baseY}" stroke="#e3e8ee" stroke-width="1"/>`;
+  const xlab=weeks.map((w,i)=>{const a=i===0?'start':(i===n-1?'end':'middle');return `<text x="${px(i).toFixed(1)}" y="${H-7}" text-anchor="${a}" font-size="9.5" fill="#8a99a8" font-family="Inter,sans-serif">${ddmmyy(w.start)}</text>`;}).join('');
+
+  // --- area chart: cumulative leased m² ---
+  const maxA=Math.max(...cumArea,1);
+  const ay=v=> baseY-(baseY-padTop)*(v/maxA);
+  const apts=cumArea.map((v,i)=>[px(i),ay(v)]);
+  const aline=apts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const afill=`M${px(0)} ${baseY} `+apts.map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+` L${px(n-1)} ${baseY} Z`;
+  const last=cumArea[n-1]; const valY=Math.max(14,apts[n-1][1]-9);
+  const areaSvg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f9e6f" stop-opacity=".30"/><stop offset="1" stop-color="#2f9e6f" stop-opacity="0"/></linearGradient></defs>
+    ${axis}
+    <path d="${afill}" fill="url(#ag)"/>
+    <path d="${aline}" fill="none" stroke="#2f9e6f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    ${apts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#2f9e6f"/>`).join('')}
+    ${xlab}
+    <text x="${px(n-1).toFixed(1)}" y="${valY.toFixed(1)}" text-anchor="end" font-size="12" font-weight="700" fill="#0e1b2a" font-family="Space Grotesk,sans-serif">${money(last)} м²</text>
+  </svg>`;
+
+  // --- meetings: vertical bars ---
+  const my=v=> baseY-(baseY-padTop)*(v/maxMeet);
+  const bw=Math.min(26,(W-2*padX)/n*0.55);
+  const bars=weeks.map((w,i)=>{
+    const c=meetCounts[i]; if(!c) return '';
+    const y=my(c), x=px(i)-bw/2, h=baseY-y;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#3a5e82"/>
+      <text x="${px(i).toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#0e1b2a" font-family="Space Grotesk,sans-serif">${c}</text>`;
+  }).join('');
+  const meetSvg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${axis}${bars}${xlab}</svg>`;
+
+  return `<div class="grid2">
+    <div class="panel">
+      <div class="panel-h"><h3>Сданная площадь, м²</h3><span class="hint">накопительно · подписанные договоры</span></div>
+      <div class="panel-b">${areaSvg}</div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h3>Встречи по неделям</h3><span class="hint">всего за 8 недель: ${totalMeet}</span></div>
+      <div class="panel-b">${meetSvg}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- PIPELINE (kanban) ---------- */
+function renderPipe(){
+  const el=document.getElementById('view-pipe');
+  el.innerHTML=`<div class="board" id="board">
+    ${STAGES.map(s=>{
+      const list=DB.deals.filter(d=>d.stage===s.id);
+      const val=list.reduce((a,d)=>a+d.area*dealRate(d),0);
+      return `<div class="col" data-stage="${s.id}">
+        <div class="col-h">
+          <div class="ttl"><i class="dot" style="background:${s.color}"></i>${s.name}<span class="ct num">${list.length}</span></div>
+          <div class="sum num">$${money(val)}</div>
+        </div>
+        <div class="col-body" data-stage="${s.id}">
+          ${list.map(dealCard).join('')||'<div style="font-size:11.5px;color:var(--ink-soft);text-align:center;padding:14px 0">пусто</div>'}
+        </div></div>`;
+    }).join('')}
+  </div>`;
+  bindDnD();
+}
+function dealCard(d){
+  return `<div class="deal" draggable="true" data-id="${d.id}" onclick="openDeal('${d.id}')">
+    <div class="dn">${d.tenant}</div>
+    <div class="dm"><span>Этаж ${d.floor}</span><span>${money(d.area)} м²</span></div>
+    <div class="drow">
+      <span class="price num">$${money(d.area*dealRate(d))}/мес</span>
+      <span class="temp ${d.temp}">${TEMPS[d.temp]}</span>
+    </div></div>`;
+}
+function bindDnD(){
+  let dragId=null;
+  document.querySelectorAll('.deal').forEach(c=>{
+    c.addEventListener('dragstart',e=>{dragId=c.dataset.id;c.classList.add('drag');e.stopPropagation();});
+    c.addEventListener('dragend',()=>{dragId=null;c.classList.remove('drag');document.querySelectorAll('.col').forEach(x=>x.classList.remove('drop'));});
+  });
+  document.querySelectorAll('.col-body').forEach(b=>{
+    const col=b.closest('.col');
+    b.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drop');});
+    b.addEventListener('dragleave',()=>col.classList.remove('drop'));
+    b.addEventListener('drop',async e=>{
+      e.preventDefault();col.classList.remove('drop');
+      if(!dragId)return;
+      const d=DB.deals.find(x=>x.id===dragId);
+      const ns=b.dataset.stage;
+      if(d&&d.stage!==ns){
+        d.acts.unshift({type:'stage',t:`Этап: ${STAGES.find(s=>s.id===d.stage).name} → ${STAGES.find(s=>s.id===ns).name}`,ts:Date.now()});
+        d.stage=ns;d.updated=Date.now();
+        if(ns==='won'){d.temp='hot';d.signedAt=Date.now();d.acts.unshift({type:'won',t:'Договор подписан · '+money(d.area)+' м²',ts:Date.now()});}
+        await save();renderPipe();
+      }
+    });
+  });
+}
+
+/* ---------- TENANTS table ---------- */
+let tFilter='all',tQuery='';
+function renderTenants(){
+  const el=document.getElementById('view-tenants');
+  el.innerHTML=`
+    <div class="toolbar">
+      <div class="search">${ic('search')}<input id="tsearch" placeholder="Поиск по арендатору, отрасли, этажу…" value="${tQuery}"></div>
+      <button class="chip ${tFilter==='all'?'on':''}" onclick="setTF('all')">Все</button>
+      <button class="chip ${tFilter==='hot'?'on':''}" onclick="setTF('hot')">Горячие</button>
+      <button class="chip ${tFilter==='warm'?'on':''}" onclick="setTF('warm')">Тёплые</button>
+      <button class="chip ${tFilter==='cold'?'on':''}" onclick="setTF('cold')">Холодные</button>
+      <button class="chip ${tFilter==='won'?'on':''}" onclick="setTF('won')">Подписанные</button>
+    </div>
+    <div id="ttable"></div>`;
+  document.getElementById('tsearch').addEventListener('input',e=>{tQuery=e.target.value;drawTable();});
+  drawTable();
+}
+function setTF(f){tFilter=f;renderTenants();}
+function drawTable(){
+  let rows=DB.deals.slice();
+  if(tFilter==='won')rows=rows.filter(d=>d.stage==='won');
+  else if(tFilter!=='all')rows=rows.filter(d=>d.temp===tFilter&&d.stage!=='won');
+  if(tQuery.trim()){const q=tQuery.toLowerCase();
+    rows=rows.filter(d=>(d.tenant+d.industry+d.floor+d.email).toLowerCase().includes(q));}
+  rows.sort((a,b)=>b.updated-a.updated);
+  const host=document.getElementById('ttable');
+  if(!rows.length){host.innerHTML=`<div class="empty">${ic('empty')}<div>Ничего не найдено</div></div>`;return;}
+  host.innerHTML=`<table><thead><tr>
+    <th>Арендатор</th><th>Отрасль</th><th>Этаж</th><th>Площадь</th><th>$/мес</th><th>Этап</th><th>Статус</th>
+  </tr></thead><tbody>
+  ${rows.map(d=>{const st=STAGES.find(s=>s.id===d.stage);
+    return `<tr onclick="openDeal('${d.id}')">
+      <td><div class="cellname"><span class="av">${initials(d.tenant)}</span>${d.tenant}</div></td>
+      <td style="color:var(--ink-soft)">${d.industry}</td>
+      <td class="num">${d.floor>=1?d.floor:'—'}</td>
+      <td class="num">${money(d.area)} м²</td>
+      <td class="num" style="font-weight:600">$${money(d.area*dealRate(d))}</td>
+      <td><span class="pill" style="background:${st.color}1f;color:${st.color}">${st.name}</span></td>
+      <td>${d.stage==='won'?'<span class="pill" style="background:var(--won-soft);color:var(--won)">Подписано</span>':`<span class="temp ${d.temp}">${TEMPS[d.temp]}</span>`}</td>
+    </tr>`;}).join('')}
+  </tbody></table>`;
+}
+
+/* ---------- FLOORS ---------- */
+function dealsOnUnit(fl,num){return DB.deals.filter(d=>d.floor===fl && (d.units||[]).includes(num));}
+function unitStatus(fl,num){
+  const ds=dealsOnUnit(fl,num);
+  if(ds.some(d=>d.stage==='won')) return 'booked';
+  if(ds.length) return 'proc';
+  return 'free';
+}
+function dealOnUnit(fl,num){
+  const ds=dealsOnUnit(fl,num);
+  return ds.find(d=>d.stage==='won')||ds[0]||null;
+}
+function renderFloors(){
+  const el=document.getElementById('view-floors');
+  const SL={booked:'Бронь',proc:'В процессе',free:'Свободно'};
+  const SC={booked:'#e3796b',proc:'#f1c453',free:'#5cba8c'};   // мягкие, дружелюбные цвета
+  const FG={booked:'#fff',proc:'#5e4708',free:'#fff'};
+  const floors=[...DB.floors].filter(f=>f.active && (f.units||[]).length).sort((a,b)=>b.n-a.n);
+  let cBooked=0,cProc=0,cFree=0;
+  const rows=floors.map(f=>{
+    const denom=Math.max(f.gla||0, floorAreaSum(f))||1;
+    // счётчики по помещениям
+    f.units.forEach(u=>{const s=unitStatus(f.n,u.number); if(s==='booked')cBooked++; else if(s==='proc')cProc++; else cFree++;});
+    // группировка: помещения одной сделки сливаются в один блок; свободные — отдельно
+    const groups=[]; const byKey={};
+    f.units.forEach(u=>{
+      const d=dealOnUnit(f.n,u.number);
+      const key=d?('d:'+d.id):('f:'+u.number);
+      if(!byKey[key]){byKey[key]={deal:d,num:u.number,area:0}; groups.push(byKey[key]);}
+      byKey[key].area+=(u.area||0);
+    });
+    const segs=groups.map(g=>{
+      const s=g.deal?(g.deal.stage==='won'?'booked':'proc'):'free';
+      const w=Math.max(g.area/denom*100,3);
+      const ar=Math.round(g.area);
+      const lab=g.deal?`${esc(g.deal.tenant)}, ${ar} м²`:`${esc(g.num)}, ${ar} м²`;
+      const tip=(g.deal?esc(g.deal.tenant):('Помещение '+esc(g.num)))+' · '+ar+' м²'+(g.deal?(' · ставка $'+dealRate(g.deal)+'/кв.м·мес'):'')+' · '+SL[s];
+      return `<span class="u" style="width:${w}%;background:${SC[s]};color:${FG[s]}" title="${tip}" ${g.deal?`onclick="openDeal('${g.deal.id}')"`:''}>${lab}</span>`;
+    }).join('');
+    return `<div class="smap-row"><div class="smap-n num">${f.n}</div><div class="smap-bar">${segs}</div></div>`;
+  }).join('');
+  el.innerHTML=`
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="kpi-accent" style="background:${SC.booked}"></div><div class="lab">Бронь</div><div class="val num">${cBooked}</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:${SC.proc}"></div><div class="lab">В процессе</div><div class="val num">${cProc}</div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:${SC.free}"></div><div class="lab">Свободно</div><div class="val num">${cFree}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h3>Карта статусов помещений</h3><span class="hint">ширина помещения = площадь · клик — открыть сделку</span></div>
+      <div class="legend">
+        <span><i class="dot" style="background:${SC.booked}"></i>Бронь</span>
+        <span><i class="dot" style="background:${SC.proc}"></i>В процессе</span>
+        <span><i class="dot" style="background:${SC.free}"></i>Свободно</span>
+      </div>
+      <div class="panel-b"><div class="smap">${rows}</div></div>
+    </div>`;
+}
+function openFloor(f){const d=DB.deals.filter(x=>x.floor===f).sort((a,b)=>b.area-a.area)[0];if(d)openDeal(d.id);}
+
+/* ---------- CONFIG (исходные данные) ---------- */
+let cfgOpen=null;
+function renderConfig(){
+  const el=document.getElementById('view-config');
+  const floors=[...DB.floors].sort((a,b)=>b.n-a.n);
+  const sellable=floors.filter(f=>f.active);
+  const sellM2=sellable.reduce((s,f)=>s+(f.gla||floorAreaSum(f)),0);
+  const unitsTotal=DB.floors.reduce((s,f)=>s+(f.units||[]).length,0);
+  el.innerHTML=`
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi"><div class="kpi-accent" style="background:var(--steel-500)"></div><div class="lab">Этажей в продаже</div><div class="val num">${sellable.length}<small> из ${DB.floors.length}</small></div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--won)"></div><div class="lab">Продаваемая площадь</div><div class="val num">${money(sellM2)}<small> м²</small></div></div>
+      <div class="kpi"><div class="kpi-accent" style="background:var(--amber)"></div><div class="lab">Всего помещений</div><div class="val num">${unitsTotal}</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h3>Этажи и помещения</h3><span class="hint">нажмите на этаж, чтобы открыть его помещения · выключатель — продаётся ли этаж</span></div>
+      <div class="cfg-floors">${floors.map(floorRowHTML).join('')}</div>
+    </div>
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-h"><h3>Данные и резервные копии</h3><span class="hint">сохраняйте копию на диск, чтобы не потерять данные</span></div>
+      <div class="panel-b" style="display:flex;gap:10px;flex-wrap:wrap;padding:16px 18px">
+        <button class="btn primary" onclick="exportBackup()">⬇ Скачать резервную копию</button>
+        <button class="btn" onclick="document.getElementById('importfile').click()">⬆ Восстановить из копии</button>
+        <button class="btn" onclick="exportCSV()">📊 Экспорт сделок в Excel</button>
+        <input type="file" id="importfile" accept=".json,application/json" style="display:none" onchange="importBackup(this)">
+      </div>
+    </div>`;
+}
+function floorRowHTML(f){
+  const open=cfgOpen===f.n;
+  const area=f.gla||floorAreaSum(f);
+  const rr=floorRateRange(f);
+  return `<div class="cfg-fl ${f.active?'':'cfg-off'} ${open?'open':''}">
+    <div class="cfg-fl-h" onclick="toggleCfgFloor(${f.n})">
+      <span class="cfg-fl-n num">${f.n}</span>
+      <span class="cfg-fl-type">${esc(f.type||'—')}</span>
+      <span class="cfg-fl-meta">${money(area)} м² · ${(f.units||[]).length} помещ.${rr?' · '+rr:''}</span>
+      <button class="tog ${f.active?'':'off'}" title="Продаётся / исключить из расчётов" onclick="event.stopPropagation();toggleFloor(${f.n})"></button>
+      <span class="cfg-caret">${open?'▾':'▸'}</span>
+    </div>
+    ${open?`<div class="cfg-units">
+      <table class="cfg-utbl"><thead><tr><th>Помещение</th><th>Площадь, м²</th><th>Ставка $/м²·мес</th><th></th></tr></thead>
+      <tbody>${(f.units||[]).map(u=>`<tr>
+        <td><input class="cellin" value="${esc(u.number||'')}" onchange="setUnit(${f.n},'${u.id}','number',this.value)"></td>
+        <td><input class="cellin num" type="number" step="0.01" min="0" value="${u.area==null?'':u.area}" onchange="setUnit(${f.n},'${u.id}','area',this.value)"></td>
+        <td><input class="cellin num" type="number" step="0.01" min="0" value="${u.rate==null?'':u.rate}" onchange="setUnit(${f.n},'${u.id}','rate',this.value)"></td>
+        <td><button class="te-del" title="Удалить помещение" onclick="delUnit(${f.n},'${u.id}')">✕</button></td>
+      </tr>`).join('')||'<tr><td colspan="4" class="muted">Помещений нет — добавьте ниже.</td></tr>'}</tbody></table>
+      <button class="btn" style="margin-top:10px" onclick="addUnit(${f.n})">＋ Добавить помещение</button>
+    </div>`:''}
+  </div>`;
+}
+function toggleCfgFloor(n){cfgOpen=(cfgOpen===n)?null:n;renderConfig();}
+async function setUnit(n,uid,field,val){
+  const f=DB.floors.find(x=>x.n===n);if(!f)return;const u=(f.units||[]).find(x=>x.id===uid);if(!u)return;
+  u[field]=(field==='number')?String(val).trim():(val===''?null:+val);
+  await save();renderConfig();
+}
+async function addUnit(n){
+  const f=DB.floors.find(x=>x.n===n);if(!f)return;f.units=f.units||[];
+  f.units.push({id:'u'+n+'_'+Date.now(),number:n+'.'+(f.units.length+1),area:null,rate:null});
+  await save();cfgOpen=n;renderConfig();
+}
+async function delUnit(n,uid){
+  const f=DB.floors.find(x=>x.n===n);if(!f)return;f.units=(f.units||[]).filter(x=>x.id!==uid);
+  await save();renderConfig();
+}
+async function toggleFloor(n){const f=DB.floors.find(x=>x.n===n);if(f){f.active=!f.active;await save();const cur=document.querySelector('.nav button.active').dataset.v;render(cur);}}
+
+/* ---------- DRAWER (deal edit) ---------- */
+let editId=null, actType='meeting';
+function openDeal(id){
+  editId=id||null; actType='meeting';
+  const d=id?DB.deals.find(x=>x.id===id):{
+    tenant:'',industry:'',email:'',phone:'',stage:'lead',temp:'cold',
+    floor:0,units:[],area:0,rate:0,agreedRate:'',term:36,note:'',
+    basis:'',priority:'',scores:{},tasks:[],acts:[]};
+  dealUnits=(d.units||[]).slice();
+  const dr=document.getElementById('drawer');
+  dr.innerHTML=`
+    <header class="df-top">
+      <div>
+        <h2>${id?esc(d.tenant)||'Сделка':'Новая сделка'}</h2>
+        <div class="df-sub">${id?'$'+money(d.area*dealRate(d))+' / мес · '+(d.floor>=1?('этаж '+d.floor+((d.units&&d.units.length)?(' · помещ. '+d.units.join(', ')):'')):'этаж не назначен')+' · '+((STAGES.find(s=>s.id===d.stage)||{}).name||''):'Заполните карточку арендатора'}</div>
+      </div>
+      <div class="df-actions">
+        ${id?'<button class="btn danger" onclick="delDeal()">Удалить</button>':''}
+        <button class="btn primary" onclick="saveDeal()">${id?'Сохранить':'Создать сделку'}</button>
+        <button class="x" onclick="closeDrawer()" title="Закрыть (Esc)">✕</button>
+      </div>
+    </header>
+    <div class="df-cols">
+      <section class="df-col">
+        <h3 class="df-h">Информация</h3>
+        <div class="field"><label>Арендатор</label><input id="f_tenant" value="${esc(d.tenant)}" placeholder="Название компании"></div>
+        <div class="field"><label>Отрасль</label><input id="f_industry" value="${esc(d.industry)}" placeholder="напр. IT / финансы"></div>
+        <div class="field"><label>Основание (описание компании)</label><textarea id="f_basis" placeholder="Чем интересен арендатор…">${esc(d.basis||'')}</textarea></div>
+        <div class="frow2">
+          <div class="field"><label>Email</label><input id="f_email" value="${esc(d.email)}"></div>
+          <div class="field"><label>Телефон</label><input id="f_phone" value="${esc(d.phone)}"></div>
+        </div>
+        <div class="field"><label>Этаж</label>
+          <select id="f_floor" onchange="onFloorPick()">
+            <option value="0" ${!(d.floor>=1)?'selected':''}>— не назначен</option>
+            ${[...DB.floors].filter(f=>f.active).sort((a,b)=>b.n-a.n).map(f=>`<option value="${f.n}" ${d.floor==f.n?'selected':''}>Этаж ${f.n} — ${esc(f.type||'')}</option>`).join('')}
+          </select></div>
+        <div class="field"><label>Помещения <span class="autohint">можно выбрать несколько</span></label>
+          <div class="unitchips" id="f_units">${unitChips(d.floor||0,d.units||[])}</div></div>
+        <div class="frow2">
+          <div class="field"><label>Площадь, кв.м</label><input id="f_area" type="number" min="0" value="${d.area}"></div>
+          <div class="field"><label>Базовая ставка, $/кв.м <span class="autohint">из помещения</span></label><input id="f_rate" type="number" min="0" step="0.01" value="${d.rate}"></div>
+        </div>
+        <div class="field"><label>💵 Согласованная ставка, $/кв.м·мес <span class="autohint">если задана — идёт в расчёты на дашборде</span></label><input id="f_agreed" type="number" min="0" step="0.01" value="${d.agreedRate==null?'':d.agreedRate}" placeholder="напр. 40 (если отличается от базовой)"></div>
+        <div class="frow2">
+          <div class="field"><label>Срок аренды, мес</label><input id="f_term" type="number" min="0" value="${d.term}"></div>
+          <div class="field"><label>Этап сделки</label>
+            <select id="f_stage">${STAGES.map(s=>`<option value="${s.id}" ${s.id===d.stage?'selected':''}>${s.name}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label>Статус (температура)</label>
+          <div class="seg" id="f_temp">
+            ${Object.entries(TEMPS).map(([k,v])=>`<button data-t="${k}" class="${d.temp===k?'on':''}" onclick="pickTemp('${k}')">${v}</button>`).join('')}
+          </div></div>
+        <div class="field"><label>⭐ Приоритизация (из анализа)</label>
+          <div class="prio-row">
+            <span class="prio-lab">Приоритет</span>
+            <select id="f_priority" class="prio-sel">
+              <option value="" ${!d.priority?'selected':''}>—</option>
+              <option value="1" ${d.priority==1?'selected':''}>1 — высокий</option>
+              <option value="2" ${d.priority==2?'selected':''}>2 — средний</option>
+              <option value="3" ${d.priority==3?'selected':''}>3 — низкий</option>
+            </select>
+          </div>
+          <div class="scoregrid">
+            ${[['fin','Финустойчивость'],['image','Имидж'],['demand','Спрос на площадь'],['longterm','Долгосрочность'],['classA','Соответствие классу А']].map(([k,lab])=>`<div class="score-row"><span class="score-lab">${lab}</span><input id="f_sc_${k}" class="score-in num" type="number" min="0" max="5" value="${(d.scores&&d.scores[k]!=null)?d.scores[k]:''}"></div>`).join('')}
+          </div>
+        </div>
+        <div class="field"><label>Заметка</label><textarea id="f_note" placeholder="Ваши заметки, требования, договорённости…">${esc(d.note||'')}</textarea></div>
+      </section>
+
+      <section class="df-col df-plans">
+        <h3 class="df-h">🗓 Планы и задачи</h3>
+        ${id?`<div class="addtask-box">
+            <input id="f_newtask" placeholder="Что нужно сделать? напр. отправить договор" onkeydown="if(event.key==='Enter')addTask()">
+            <div class="addtask-row"><input id="f_newtaskdate" type="date"><button class="btn primary" onclick="addTask()">＋ Добавить</button></div>
+          </div>
+          <div class="tasklist-edit">
+            ${tasksSorted(d).map(t=>taskRowHTML(d.id,t)).join('')||'<div class="muted">Задач пока нет. Добавьте первую выше — например «встреча 20.06» и «отправить договор до 25.06».</div>'}
+          </div>
+          <div class="files-sec">
+            <h4 class="files-h">📎 Файлы <span class="autohint">протоколы, договоры, письма</span></h4>
+            <label class="filedrop"><input type="file" multiple style="display:none" onchange="attachFiles(this)"><span>＋ Прикрепить файлы</span></label>
+            <div class="filelist">${filesListHTML(d)}</div>
+          </div>`
+        :`<div class="addtask-box">
+            <input id="f_newtask" placeholder="Первая задача (необязательно)">
+            <input id="f_newtaskdate" type="date" style="margin-top:8px">
+          </div>
+          <div class="muted">Задачи и файлы (протоколы, договоры) можно будет добавить после создания сделки.</div>`}
+      </section>
+
+      <section class="df-col df-history">
+        <h3 class="df-h">История <span class="autohint">вся работа с арендатором</span></h3>
+        ${id?((d.acts||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,40).map(a=>`<div class="act"><div class="ic">${actIcon(a.type)}</div><div style="flex:1;min-width:0"><div class="at">${esc(a.t)}</div>${a.note?`<div class="acn">${esc(a.note)}</div>`:''}<div class="ad">${a.ts?fmtDate(a.ts):(a.d||'')}</div></div></div>`).join('')||'<div class="muted">Пока пусто. Действия появятся здесь автоматически.</div>')
+        :'<div class="muted">История появится после создания сделки — звонки, встречи, задачи и договорённости будут собираться здесь.</div>'}
+      </section>
+    </div>`;
+  dr.classList.add('open');document.getElementById('scrim').classList.add('open');
+}
+let tempPick=null;
+function pickTemp(k){tempPick=k;document.querySelectorAll('#f_temp button').forEach(b=>b.classList.toggle('on',b.dataset.t===k));}
+let dealUnits=[];
+function unitChips(fn,sel){
+  const us=floorUnits(fn);
+  if(!us.length) return '<div class="muted">Сначала выберите этаж</div>';
+  return us.map(u=>{
+    const on=(sel||[]).includes(u.number);
+    return `<button type="button" class="uchip ${on?'on':''}" onclick="toggleUnitChip('${esc(u.number)}')">${esc(u.number)} · ${u.area==null?'?':Math.round(u.area)} м²${u.rate?(' · $'+u.rate):''}</button>`;
+  }).join('');
+}
+function recalcUnitTotals(){
+  const fn=+document.getElementById('f_floor').value;
+  let area=0,val=0;
+  dealUnits.forEach(n=>{const u=unitOf(fn,n); if(u){area+=(u.area||0); val+=(u.area||0)*(u.rate||0);}});
+  document.getElementById('f_area').value=area?+area.toFixed(2):0;
+  document.getElementById('f_rate').value=area?+(val/area).toFixed(2):0;
+}
+function toggleUnitChip(num){
+  const i=dealUnits.indexOf(num);
+  if(i>=0)dealUnits.splice(i,1); else dealUnits.push(num);
+  const fn=+document.getElementById('f_floor').value;
+  document.getElementById('f_units').innerHTML=unitChips(fn,dealUnits);
+  recalcUnitTotals();
+}
+function onFloorPick(){
+  const fn=+document.getElementById('f_floor').value;
+  dealUnits=[];
+  document.getElementById('f_units').innerHTML=unitChips(fn,dealUnits);
+  document.getElementById('f_area').value=0; document.getElementById('f_rate').value=0;
+}
+function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');editId=null;tempPick=null;}
+function stageColor(st){return st==='won'?'var(--won)':((st==='nego'||st==='loi')?'var(--amber)':'var(--cold)');}
+function stageWord(st){return st==='won'?'Занято':((st==='nego'||st==='loi')?'Переговоры':'В работе');}
+function plural(n,a,b,c){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c;}
+// окно спорных помещений: помещения, на которые претендуют 2+ арендаторов (не подписано)
+function openContest(f){
+  const fc=floorCfg(f);
+  const fdeals=DB.deals.filter(d=>d.floor===f);
+  const rows=[];
+  (fc.units||[]).forEach(u=>{
+    const cl=fdeals.filter(d=>(d.units||[]).includes(u.number));
+    if(cl.filter(d=>d.stage!=='won').length>=2) rows.push({u,cl});
+  });
+  const tenants=[...new Set(rows.flatMap(r=>r.cl.map(d=>d.tenant)))];
+  const box=document.getElementById('modalBox');
+  box.innerHTML=`
+    <div class="modal-hd">
+      <div>
+        <h3>Спорные помещения · этаж ${f}</h3>
+        <div class="sub">${rows.length} ${plural(rows.length,'помещение','помещения','помещений')} · ${tenants.length} ${plural(tenants.length,'претендент','претендента','претендентов')}. Бронь возможна на все помещения, кроме подписанных.</div>
+      </div>
+      <button class="modal-x" onclick="closeModal()" title="Закрыть">✕</button>
+    </div>
+    <div class="modal-bd">
+      ${rows.map(r=>`
+        <div class="contest-u">
+          <div class="uhd">
+            <span class="unum">Помещение ${esc(r.u.number)}</span>
+            <span class="uarea">${r.u.area==null?'?':money(r.u.area)} м²</span>
+            <span class="cnt">${r.cl.filter(d=>d.stage!=='won').length} ${plural(r.cl.filter(d=>d.stage!=='won').length,'претендент','претендента','претендентов')}</span>
+          </div>
+          ${r.cl.slice().sort((a,b)=>(a.created||0)-(b.created||0)).map((d,i)=>`
+            <div class="claimant ${d.stage==='won'?'won':''}" onclick="closeModal();openDeal('${d.id}')" title="Открыть карточку">
+              <span class="dot" style="background:${stageColor(d.stage)}"></span>
+              <span class="nm">${esc(d.tenant)}${i===0&&d.stage!=='won'?' · первый':''}</span>
+              <span class="st">${stageWord(d.stage)} · $${dealRate(d)}/м²</span>
+            </div>`).join('')}
+        </div>`).join('')||'<div class="muted">Спорных помещений на этаже нет.</div>'}
+    </div>`;
+  document.getElementById('modalScrim').classList.add('open');
+}
+function closeModal(){document.getElementById('modalScrim').classList.remove('open');}
+function val(id){return document.getElementById(id).value;}
+async function saveDeal(){
+  const g=id=>document.getElementById(id).value;
+  const tenant=g('f_tenant').trim();
+  if(!tenant){document.getElementById('f_tenant').focus();return;}
+  const temp=tempPick||document.querySelector('#f_temp button.on')?.dataset.t||'cold';
+  const prio=g('f_priority')?+g('f_priority'):null;
+  const sc=()=>{const o={};['fin','image','demand','longterm','classA'].forEach(k=>{const el=document.getElementById('f_sc_'+k);if(el&&el.value!=='')o[k]=+el.value;});return o;};
+  if(editId){
+    const d=DB.deals.find(x=>x.id===editId);
+    const oldStage=d.stage;
+    Object.assign(d,{tenant,industry:g('f_industry'),email:g('f_email'),phone:g('f_phone'),
+      floor:+g('f_floor'),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
+      stage:g('f_stage'),temp,note:g('f_note'),basis:g('f_basis'),priority:prio,scores:sc(),updated:Date.now()});
+    const nt=g('f_newtask').trim();              // если в поле новой задачи что-то набрано — не теряем
+    if(nt){(d.tasks=d.tasks||[]).push({id:'t'+Date.now(),text:nt,date:g('f_newtaskdate'),done:false});}
+    if(oldStage!==d.stage){
+      d.acts.unshift({type:'stage',t:`Этап: ${STAGES.find(s=>s.id===oldStage).name} → ${STAGES.find(s=>s.id===d.stage).name}`,ts:Date.now()});
+      if(d.stage==='won'&&oldStage!=='won'){d.signedAt=Date.now();d.acts.unshift({type:'won',t:'Договор подписан · '+money(d.area)+' м²',ts:Date.now()});}
+    }
+  }else{
+    const nt=g('f_newtask').trim();
+    const nd={id:'d'+Date.now(),tenant,industry:g('f_industry'),email:g('f_email'),phone:g('f_phone'),
+      floor:+g('f_floor'),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
+      stage:g('f_stage'),temp,note:g('f_note'),basis:g('f_basis'),priority:prio,scores:sc(),created:Date.now(),updated:Date.now(),
+      tasks:nt?[{id:'t'+Date.now(),text:nt,date:g('f_newtaskdate'),done:false}]:[],
+      acts:[{type:'create',t:'Сделка создана',ts:Date.now()}]};
+    if(nd.stage==='won'){nd.signedAt=Date.now();nd.acts.unshift({type:'won',t:'Договор подписан · '+money(nd.area)+' м²',ts:Date.now()});}
+    DB.deals.push(nd);
+  }
+  await save();closeDrawer();
+  const cur=document.querySelector('.nav button.active').dataset.v;render(cur);
+}
+async function delDeal(){
+  if(!editId)return;
+  const d=DB.deals.find(x=>x.id===editId);
+  if(!confirm('Удалить сделку'+(d?' с «'+d.tenant+'»':'')+'? Действие нельзя отменить.'))return;
+  DB.deals=DB.deals.filter(x=>x.id!==editId);
+  await save();closeDrawer();
+  const cur=document.querySelector('.nav button.active').dataset.v;render(cur);
+}
+function reRenderAfterDeal(did){const cur=document.querySelector('.nav button.active')?.dataset.v; if(cur)render(cur); /* перерисовка дашборда/таблиц */}
+async function setTaskComment(did,tid,val){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  const t=(d.tasks||[]).find(x=>x.id===tid); if(!t)return;
+  val=(val||'').trim();
+  if(val===(t.comment||''))return;
+  t.comment=val;
+  if(val)(d.acts=d.acts||[]).unshift({type:'note',t:'Комментарий к задаче: '+t.text,ts:Date.now(),note:val});
+  d.updated=Date.now();
+  await save(); openDeal(did); reRenderAfterDeal(did);
+}
+function tasksSorted(d){return (d.tasks||[]).slice().sort((a,b)=>{if(!!a.done!==!!b.done)return a.done?1:-1;return (a.date||'9999-99-99').localeCompare(b.date||'9999-99-99');});}
+function taskRowHTML(did,t){
+  const today=ymd();
+  const done=!!t.done;
+  const late=!done&&t.date&&t.date<today;
+  const isToday=!done&&t.date===today;
+  const cls=done?'done':(late?'late':'');
+  let badge='';
+  if(done) badge='<span class="te-badge ok">выполнено</span>';
+  else if(t.date) badge=`<span class="te-badge ${late?'late':(isToday?'now':'soon')}">${late?'просрочено':(isToday?'сегодня':fmtDay(t.date))}</span>`;
+  return `<div class="te ${cls}">
+    <div class="te-top">
+      <button class="te-check ${done?'on':''}" title="Отметить выполнено" onclick="toggleTask('${did}','${t.id}')"></button>
+      <div class="te-main"><div class="te-text">${esc(t.text)}</div></div>
+      ${badge}
+      <button class="te-del" title="Удалить" onclick="delTask('${did}','${t.id}')">✕</button>
+    </div>
+    <input class="te-comment" value="${esc(t.comment||'')}" placeholder="комментарий / результат…" onchange="setTaskComment('${did}','${t.id}',this.value)">
+  </div>`;
+}
+async function addTask(){
+  if(!editId)return;
+  const text=document.getElementById('f_newtask').value.trim();
+  if(!text)return;
+  const date=document.getElementById('f_newtaskdate').value;
+  const d=DB.deals.find(x=>x.id===editId); if(!d)return;
+  (d.tasks=d.tasks||[]).push({id:'t'+Date.now(),text,date,done:false,comment:''});
+  (d.acts=d.acts||[]).unshift({type:'task',t:'Запланировано: '+text+(date?' ('+fmtDay(date)+')':''),ts:Date.now()});
+  d.updated=Date.now();
+  await save(); openDeal(editId); reRenderAfterDeal(editId);
+}
+async function toggleTask(did,tid){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  const t=(d.tasks||[]).find(x=>x.id===tid); if(!t)return;
+  t.done=!t.done;
+  if(t.done){t.doneAt=Date.now();(d.acts=d.acts||[]).unshift({type:'done',t:'Выполнено: '+t.text,ts:Date.now(),note:t.comment||''});}
+  d.updated=Date.now();
+  await save(); openDeal(did); reRenderAfterDeal(did);
+}
+async function delTask(did,tid){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  d.tasks=(d.tasks||[]).filter(x=>x.id!==tid); await save(); openDeal(did); reRenderAfterDeal(did);
+}
+/* ---------- файлы сделки (протоколы, договоры) ---------- */
+function fileIcon(t,name){t=(t||'');name=(name||'').toLowerCase();
+  if(t.includes('pdf')||name.endsWith('.pdf'))return '📄';
+  if(t.includes('image')||/\.(png|jpe?g|gif|webp|bmp|svg)$/.test(name))return '🖼';
+  if(/\.(docx?|rtf|odt)$/.test(name))return '📝';
+  if(/\.(xlsx?|csv|ods)$/.test(name))return '📊';
+  if(/\.(zip|rar|7z)$/.test(name))return '🗜';
+  return '📎';}
+function fmtBytes(b){b=+b||0;if(b<1024)return b+' Б';if(b<1048576)return Math.round(b/1024)+' КБ';return (b/1048576).toFixed(1)+' МБ';}
+function filesListHTML(d){
+  const fs=d.files||[];
+  if(!fs.length) return '<div class="muted">Файлов пока нет. Прикрепите протокол, договор, письмо и т.д.</div>';
+  return fs.map(f=>`<div class="file-row">
+      <span class="fic">${fileIcon(f.type,f.name)}</span>
+      <span class="fnm" title="${esc(f.name)}" onclick="downloadFile('${d.id}','${f.id}')">${esc(f.name)}</span>
+      <span class="fsz">${fmtBytes(f.size)}</span>
+      ${f.ts?`<span class="fdate" title="Дата прикрепления">${ddmmyy(f.ts)}</span>`:''}
+      <button class="fdl" title="Скачать" onclick="downloadFile('${d.id}','${f.id}')">⭳</button>
+      <button class="fdel" title="Удалить" onclick="removeFile('${d.id}','${f.id}')">✕</button>
+    </div>`).join('');
+}
+async function attachFiles(input){
+  if(!editId){input.value='';return;}
+  const d=DB.deals.find(x=>x.id===editId); if(!d){input.value='';return;}
+  d.files=d.files||[];
+  const files=[...input.files]; input.value=''; if(!files.length)return;
+  let pending=files.length, added=0;
+  const done=async()=>{ if(--pending>0)return;
+    if(added){ d.updated=Date.now(); (d.acts=d.acts||[]).unshift({type:'note',t:'Прикреплены файлы: '+added,ts:Date.now()});
+      try{ await save(); }catch(e){ alert('Не удалось сохранить: локальное хранилище переполнено. Удалите крупные файлы.'); }
+    }
+    openDeal(editId); reRenderAfterDeal(editId);
+  };
+  files.forEach(file=>{
+    if(file.size>4*1024*1024){ alert('Файл «'+file.name+'» больше 4 МБ — слишком велик для локального хранилища браузера. Уменьшите файл или укажите ссылку в заметке.'); done(); return; }
+    const r=new FileReader();
+    r.onload=()=>{ d.files.push({id:'fl'+Date.now()+'_'+Math.round(Math.random()*1e5),name:file.name,type:file.type,size:file.size,data:r.result,ts:Date.now()}); added++; done(); };
+    r.onerror=()=>{ done(); };
+    r.readAsDataURL(file);
+  });
+}
+function downloadFile(did,fid){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  const f=(d.files||[]).find(x=>x.id===fid); if(!f)return;
+  const a=document.createElement('a'); a.href=f.data; a.download=f.name; document.body.appendChild(a); a.click(); a.remove();
+}
+async function removeFile(did,fid){
+  const d=DB.deals.find(x=>x.id===did); if(!d)return;
+  const f=(d.files||[]).find(x=>x.id===fid);
+  if(f && !confirm('Удалить файл «'+f.name+'»?'))return;
+  d.files=(d.files||[]).filter(x=>x.id!==fid); d.updated=Date.now();
+  await save(); openDeal(did); reRenderAfterDeal(did);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeDrawer();}});
+
+/* ---------- report (для руководства) ---------- */
+function printReport(){
+  const m=metrics();
+  const weeks=weekBuckets(8);
+  const allActs=DB.deals.flatMap(d=>d.acts||[]);
+  const meetTotal=weeks.reduce((s,w)=>s+allActs.filter(a=>a&&a.type==='meeting'&&a.ts>=w.start&&a.ts<w.end).length,0);
+  const won=DB.deals.filter(d=>d.stage==='won');
+  const activeDeals=DB.deals.filter(d=>d.stage!=='won');
+  const hot=activeDeals.filter(d=>d.temp==='hot');
+  const stageCounts=STAGES.map(s=>({name:s.name,n:DB.deals.filter(d=>d.stage===s.id).length}));
+  const today=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+  const sName=id=>(STAGES.find(s=>s.id===id)||{}).name||id;
+  const pr=periodRange(PERIOD), ps=periodStats(pr);
+  document.getElementById('report').innerHTML=`
+    <h1>Отчёт по аренде · SUMMIT Business Center</h1>
+    <div class="rep-date">по состоянию на ${today} · итоги ${pr.label}</div>
+    <h2>Итоги ${pr.label}</h2>
+    <table class="rep-t"><tbody>
+      <tr><td>Договоров подписано</td><td>${ps.signedCount}</td></tr>
+      <tr><td>Площадь сдана</td><td>${money(ps.signedArea)} м²</td></tr>
+      <tr><td>Доход добавлен</td><td>$${money(ps.signedVal)} / мес</td></tr>
+      <tr><td>Встреч проведено</td><td>${ps.meetings}</td></tr>
+      <tr><td>Новых сделок</td><td>${ps.newDeals}</td></tr>
+    </tbody></table>
+    <h2>Текущее состояние</h2>
+    <div class="rep-kpi">
+      <div><b>${m.occPct}%</b><span>заполняемость (${money(m.occM2)} / ${money(m.totalM2)} м²)</span></div>
+      <div><b>${won.length}</b><span>договоров подписано</span></div>
+      <div><b>$${money(m.wonVal)}</b><span>закреплённый доход в месяц</span></div>
+      <div><b>${activeDeals.length}</b><span>сделок в работе (${hot.length} горячих)</span></div>
+      <div><b>$${money(m.pipelineVal)}</b><span>потенциал воронки в месяц</span></div>
+      <div><b>${meetTotal}</b><span>встреч за 8 недель</span></div>
+    </div>
+    <h2>Воронка по этапам</h2>
+    <table class="rep-t"><thead><tr><th>Этап</th><th>Сделок</th></tr></thead>
+      <tbody>${stageCounts.map(s=>`<tr><td>${s.name}</td><td>${s.n}</td></tr>`).join('')}</tbody></table>
+    <h2>Подписанные договоры</h2>
+    <table class="rep-t"><thead><tr><th>Арендатор</th><th>Этаж</th><th>Площадь</th><th>$/мес</th></tr></thead>
+      <tbody>${won.length?won.map(d=>`<tr><td>${esc(d.tenant)}</td><td>${d.floor}</td><td>${money(d.area)} м²</td><td>$${money(d.area*dealRate(d))}</td></tr>`).join(''):'<tr><td colspan="4">—</td></tr>'}</tbody></table>
+    <h2>Горячие сделки — требуют внимания</h2>
+    <table class="rep-t"><thead><tr><th>Арендатор</th><th>Этап</th><th>Этаж</th><th>$/мес</th><th>Следующий шаг</th></tr></thead>
+      <tbody>${hot.length?hot.map(d=>`<tr><td>${esc(d.tenant)}</td><td>${sName(d.stage)}</td><td>${d.floor}</td><td>$${money(d.area*dealRate(d))}</td><td>${esc(d.nextStep||'—')}${d.nextDate?' ('+fmtDay(d.nextDate)+')':''}</td></tr>`).join(''):'<tr><td colspan="5">—</td></tr>'}</tbody></table>
+    <div class="rep-foot">Сформировано в инструменте SUMMIT · ${today}</div>`;
+  window.print();
+}
+
+/* ---------- backup / export ---------- */
+function download(name,text,type){
+  const b=new Blob([text],{type:type||'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function exportBackup(){download('summit-backup-'+ymd()+'.json',JSON.stringify(DB,null,2),'application/json');}
+function exportCSV(){
+  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const head=['Этаж','Помещение','Арендатор','Отрасль','Площадь, кв.м','Базовая ставка $/кв.м','Согласованная ставка $/кв.м','Сумма $/мес','Этап','Статус','Приоритет','Следующая задача'];
+  const rows=DB.deals.slice().sort((a,b)=>(a.floor||0)-(b.floor||0)).map(d=>{
+    const nt=(d.tasks||[]).filter(t=>!t.done).sort((a,b)=>(a.date||'').localeCompare(b.date||''))[0];
+    return [
+    d.floor||'', (d.units||[]).join(' '), d.tenant, d.industry, d.area, d.rate, (d.agreedRate==null||d.agreedRate==='')?'':d.agreedRate, d.area*dealRate(d),
+    (STAGES.find(s=>s.id===d.stage)||{}).name||d.stage, TEMPS[d.temp]||'', d.priority||'',
+    nt?(nt.text+(nt.date?' ('+fmtDay(nt.date)+')':'')):''
+  ].map(q).join(';');});
+  const csv='﻿'+[head.map(q).join(';'),...rows].join('\r\n');
+  download('summit-sdelki-'+ymd()+'.csv',csv,'text/csv;charset=utf-8');
+}
+async function importBackup(input){
+  const file=input.files&&input.files[0]; if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!data||!Array.isArray(data.deals)) throw new Error('bad');
+    if(!confirm('Загрузить данные из копии? Текущие данные будут заменены.')){input.value='';return;}
+    DB=data;
+    migrateDB(); // привести копию к текущей модели версии
+    await save(); input.value=''; go('dash');
+    alert('Данные восстановлены из копии. Записи перенесены в текущую версию.');
+  }catch(e){ alert('Не удалось прочитать файл. Нужен JSON-файл резервной копии SUMMIT.'); input.value=''; }
+}
+
+/* ---------- boot ---------- */
+(async()=>{
+  document.querySelectorAll('[data-ic]').forEach(b=>{b.insertAdjacentHTML('afterbegin',ic(b.dataset.ic));});
+  await load();go('dash');
+})();
+</script>
