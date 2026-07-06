@@ -1,0 +1,21 @@
+{
+  "name": "bc-assistant-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BC-ASSISTANT (SUMMIT БЦ) API — shared workspace, single shared login (JWT), local-disk file storage",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "hash": "node src/hash.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "pg": "^8.12.0"
+  }
+}

@@ -1,0 +1,16 @@
+# /etc/systemd/system/bc-assistant.service
+[Unit]
+Description=BC-ASSISTANT API (SUMMIT БЦ leasing CRM)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=admintg
+WorkingDirectory=/opt/bc-assistant/server
+EnvironmentFile=/opt/bc-assistant/server/.env
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
