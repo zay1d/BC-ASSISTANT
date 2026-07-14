@@ -451,7 +451,17 @@
     .menu-btn{display:inline-flex!important}
     .kpi-row{grid-template-columns:1fr 1fr}
     .content{padding:18px 16px 50px}
-    .topbar{padding:14px 16px}
+    /* топбар: переносим и сжимаем, чтобы кнопки не обрезались */
+    .topbar{padding:12px 14px;flex-wrap:wrap;row-gap:9px;gap:9px}
+    .topbar>div:first-of-type{min-width:0;flex:1 1 auto}
+    .topbar h2{font-size:17px;line-height:1.15}
+    .topbar .sub{display:none}
+    .topbar .btn{padding:8px 11px;font-size:12.5px}
+    /* держим приложение в ширину экрана — без зума всей страницы */
+    html,body,.shell,.main{max-width:100vw}
+    .main{overflow-x:hidden}
+    /* широкие таблицы/карты скроллятся ВНУТРИ своего вида, а не растягивают страницу */
+    #view-tenants,#view-floors,#view-config,#view-pipe,#view-tasks{overflow-x:auto;-webkit-overflow-scrolling:touch}
   }
   .menu-btn{display:none}
   /* ---------- План этажа ---------- */
