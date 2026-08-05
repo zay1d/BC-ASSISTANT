@@ -351,6 +351,14 @@
   .pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-block}
   .av{width:30px;height:30px;border-radius:8px;background:var(--steel-700);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Space Grotesk'}
   .cellname{display:flex;align-items:center;gap:10px;font-weight:600}
+  /* группировка сделок одного арендатора */
+  .tgroup{cursor:pointer}
+  .gcount{font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--paper-2);border-radius:20px;padding:3px 9px;margin-left:8px;white-space:nowrap}
+  .trow-sub td{background:#f7fafc;font-size:12.5px}
+  .trow-sub .cellname.sub{font-weight:500;color:var(--steel-700);padding-left:26px}
+  .subarrow{color:var(--steel-300);font-weight:700}
+  .trow-add td{color:var(--steel-500);font-weight:600;cursor:pointer;padding-left:40px}
+  .trow-add:hover td{color:var(--steel-700)}
 
   /* ---------- Drawer / modal ---------- */
   .scrim{position:fixed;inset:0;background:rgba(14,27,42,.45);opacity:0;pointer-events:none;transition:.2s;z-index:40}
@@ -1282,6 +1290,25 @@ function renderTenants(){
   drawTable();
 }
 function setTF(f){tFilter=f;renderTenants();}
+/* арендатор может иметь несколько сделок (у каждой — свой этаж/локация) — группируем */
+let tOpen={}, tGroups=[];
+function tenantKey(d){return (d.tenant||'').trim().toLowerCase();}
+function toggleTG(i){const k=tGroups[i]&&tGroups[i].key; if(!k)return; tOpen[k]=!tOpen[k]; drawTable();}
+function dealRowHTML(d,sub){
+  const st=STAGES.find(s=>s.id===d.stage);
+  const name=sub
+    ?`<div class="cellname sub"><span class="subarrow">↳</span>${dealFloors(d).length?('этаж '+dealFloorsLabel(d)):'этаж не назначен'}${(d.units&&d.units.length)?(' · пом. '+d.units.join(', ')):''}</div>`
+    :`<div class="cellname"><span class="av">${initials(d.tenant)}</span>${d.tenant}</div>`;
+  return `<tr class="${sub?'trow-sub':''}" onclick="openDeal('${d.id}')">
+      <td>${name}</td>
+      <td style="color:var(--ink-soft)">${sub?'':d.industry}</td>
+      <td class="num">${dealFloorsLabel(d)||'—'}</td>
+      <td class="num">${money(d.area)} м²</td>
+      <td class="num" style="font-weight:600">$${money(d.area*dealRate(d))}</td>
+      <td><span class="pill" style="background:${st.color}1f;color:${st.color}">${st.name}</span></td>
+      <td>${d.stage==='won'?'<span class="pill" style="background:var(--won-soft);color:var(--won)">Подписано</span>':`<span class="temp ${d.temp}">${TEMPS[d.temp]}</span>`}</td>
+    </tr>`;
+}
 function drawTable(){
   let rows=DB.deals.slice();
   if(tFilter==='won')rows=rows.filter(d=>d.stage==='won');
@@ -1291,20 +1318,41 @@ function drawTable(){
   rows.sort((a,b)=>b.updated-a.updated);
   const host=document.getElementById('ttable');
   if(!rows.length){host.innerHTML=`<div class="empty">${ic('empty')}<div>Ничего не найдено</div></div>`;return;}
+  // группировка по арендатору с сохранением порядка (по свежести)
+  const gmap={}; tGroups=[];
+  rows.forEach(d=>{const k=tenantKey(d); if(!gmap[k]){gmap[k]={key:k,deals:[]}; tGroups.push(gmap[k]);} gmap[k].deals.push(d);});
   host.innerHTML=`<table><thead><tr>
     <th>Арендатор</th><th>Отрасль</th><th>Этаж</th><th>Площадь</th><th>$/мес</th><th>Этап</th><th>Статус</th>
   </tr></thead><tbody>
-  ${rows.map(d=>{const st=STAGES.find(s=>s.id===d.stage);
-    return `<tr onclick="openDeal('${d.id}')">
-      <td><div class="cellname"><span class="av">${initials(d.tenant)}</span>${d.tenant}</div></td>
-      <td style="color:var(--ink-soft)">${d.industry}</td>
-      <td class="num">${dealFloorsLabel(d)||'—'}</td>
-      <td class="num">${money(d.area)} м²</td>
-      <td class="num" style="font-weight:600">$${money(d.area*dealRate(d))}</td>
-      <td><span class="pill" style="background:${st.color}1f;color:${st.color}">${st.name}</span></td>
-      <td>${d.stage==='won'?'<span class="pill" style="background:var(--won-soft);color:var(--won)">Подписано</span>':`<span class="temp ${d.temp}">${TEMPS[d.temp]}</span>`}</td>
-    </tr>`;}).join('')}
+  ${tGroups.map((g,gi)=>{
+    if(g.deals.length===1) return dealRowHTML(g.deals[0],false);
+    const d0=g.deals[0], open=!!tOpen[g.key];
+    const area=g.deals.reduce((s,d)=>s+(+d.area||0),0);
+    const val=g.deals.reduce((s,d)=>s+(+d.area||0)*dealRate(d),0);
+    const fls=[...new Set(g.deals.flatMap(dealFloors))].sort((a,b)=>a-b);
+    const anyWon=g.deals.some(d=>d.stage==='won');
+    const hottest=['hot','warm','cold'].find(t=>g.deals.some(d=>d.temp===t&&d.stage!=='won'));
+    const head=`<tr class="tgroup" onclick="toggleTG(${gi})">
+      <td><div class="cellname"><span class="av">${initials(d0.tenant)}</span>${d0.tenant}<span class="gcount">${open?'▾':'▸'} ${g.deals.length} сдел${g.deals.length<5?'ки':'ок'}</span></div></td>
+      <td style="color:var(--ink-soft)">${d0.industry}</td>
+      <td class="num">${fls.length?fls.join(', '):'—'}</td>
+      <td class="num">${money(area)} м²</td>
+      <td class="num" style="font-weight:600">$${money(val)}</td>
+      <td><span class="pill" style="background:var(--paper-2);color:var(--ink-soft)">${g.deals.length} сделки</span></td>
+      <td>${anyWon?'<span class="pill" style="background:var(--won-soft);color:var(--won)">Подписано</span>':(hottest?`<span class="temp ${hottest}">${TEMPS[hottest]}</span>`:'—')}</td>
+    </tr>`;
+    if(!open) return head;
+    return head+g.deals.map(d=>dealRowHTML(d,true)).join('')
+      +`<tr class="trow-sub trow-add" onclick="newDealFor('${d0.id}')"><td colspan="7"><span class="subarrow">＋</span> Новая сделка для «${esc(d0.tenant)}»</td></tr>`;
+  }).join('')}
   </tbody></table>`;
+}
+/* новая сделка тому же арендатору — контакты префиллятся из существующей */
+let newDealPreset=null;
+function newDealFor(srcId){
+  const s=DB.deals.find(x=>x.id===srcId); if(!s)return;
+  newDealPreset={tenant:s.tenant,industry:s.industry,email:s.email,phone:s.phone,basis:s.basis||''};
+  openDeal();
 }
 
 /* ---------- FLOORS ---------- */
@@ -1439,10 +1487,11 @@ async function toggleFloor(n){const f=DB.floors.find(x=>x.n===n);if(f){f.active=
 let editId=null, actType='meeting';
 function openDeal(id){
   editId=id||null; actType='meeting';
-  const d=id?DB.deals.find(x=>x.id===id):{
+  const d=id?DB.deals.find(x=>x.id===id):Object.assign({
     tenant:'',industry:'',email:'',phone:'',stage:'lead',temp:'cold',
     floor:0,units:[],area:0,rate:0,agreedRate:'',term:36,note:'',
-    basis:'',priority:'',scores:{},tasks:[],acts:[]};
+    basis:'',priority:'',scores:{},tasks:[],acts:[]},newDealPreset||{});
+  newDealPreset=null;
   dealUnits=(d.units||[]).slice();
   dealFloorsSel=dealFloors(d).slice();
   const dr=document.getElementById('drawer');
