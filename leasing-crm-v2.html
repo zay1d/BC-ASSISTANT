@@ -191,6 +191,8 @@
   .uchip{border:1px solid var(--line);background:var(--card);padding:6px 10px;border-radius:9px;font-size:12px;font-weight:600;color:var(--steel-700);cursor:pointer}
   .uchip:hover{border-color:var(--steel-300)}
   .uchip.on{background:var(--steel-900);color:#fff;border-color:var(--steel-900)}
+  .uchip-floor{width:100%;margin-bottom:4px}
+  .uchip-floor-h{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.3px;margin:6px 0 5px}
   .autohint{font-weight:500;text-transform:none;letter-spacing:0;color:var(--steel-500);font-size:10px}
 
   /* 3 cards row (Итоги · Воронка · Статус) — равная высота, контент на всю площадь */
@@ -639,6 +641,16 @@ function floorCfg(n){return (DB.floors||[]).find(f=>f.n===n)||{n,gla:0,type:'',a
 function floorActive(n){return !!floorCfg(n).active;}
 function floorUnits(n){return floorCfg(n).units||[];}
 function unitOf(n,num){return floorUnits(n).find(u=>u.number===num)||null;}
+/* многоэтажные сделки: номер помещения содержит этаж («7.1» → этаж 7) */
+function unitFloorOf(num){return parseInt(String(num).split('.')[0],10)||0;}
+function unitByNum(num){return unitOf(unitFloorOf(num),num);}
+function dealFloors(d){
+  if(d.floors&&d.floors.length) return [...d.floors].sort((a,b)=>a-b);
+  const fs=[...new Set((d.units||[]).map(unitFloorOf).filter(n=>n>=1))];
+  if(fs.length) return fs.sort((a,b)=>a-b);
+  return d.floor>=1?[d.floor]:[];
+}
+function dealFloorsLabel(d){const fs=dealFloors(d);return fs.length?fs.join(', '):'';}
 function floorAreaSum(f){return (f.units||[]).reduce((s,u)=>s+(+u.area||0),0);}
 function floorRateRange(f){const rs=(f.units||[]).map(u=>+u.rate).filter(x=>x>0);if(!rs.length)return '';const mn=Math.min(...rs),mx=Math.max(...rs);return mn===mx?('$'+mn):('$'+mn+'–$'+mx);}
 function dealRate(d){const a=d.agreedRate; return (a!=null && a!=='' && !isNaN(a) && +a>0) ? +a : (+d.rate||0);} // согласованная ставка приоритетнее базовой
@@ -734,6 +746,11 @@ function migrateDB(){ // приводит данные (из localStorage или
   DB.deals.forEach(d=>{
     if(!d.tasks){ d.tasks=(d.nextStep||d.nextDate)?[{id:'t'+(d.id||'')+'m',text:d.nextStep||'Следующий шаг',date:d.nextDate||'',done:false}]:[]; }
     if(d.units===undefined){ d.units = d.unit?[d.unit]:[]; }
+    if(d.floors===undefined){
+      const fs=[...new Set((d.units||[]).map(unitFloorOf).filter(n=>n>=1))];
+      d.floors=fs.length?fs.sort((a,b)=>a-b):(d.floor>=1?[d.floor]:[]);
+    }
+    if(d.floor===undefined||!(d.floor>=1)){ d.floor=d.floors[0]||0; }
     if(d.agreedRate===undefined){ d.agreedRate=''; }
     if(d.priority===undefined){ d.priority=''; }
     if(d.scores===undefined){ d.scores={}; }
@@ -914,7 +931,7 @@ function taskRowHTML2(x,tagCls,tagTxt){
     <button class="te-check" title="Отметить выполненной" onclick="event.stopPropagation();markTaskDone('${d.id}','${t.id}')"></button>
     <span class="task-tag ${tagCls}">${tagTxt}</span>
     <div class="task-main"><div class="task-t">${esc(t.text)}</div>
-      <div class="task-sub">${esc(d.tenant)}${d.floor>=1?' · этаж '+d.floor:''}</div></div>
+      <div class="task-sub">${esc(d.tenant)}${dealFloors(d).length?' · этаж '+dealFloorsLabel(d):''}</div></div>
     <span class="temp ${d.temp}">${TEMPS[d.temp]}</span>
   </div>`;
 }
@@ -1016,7 +1033,7 @@ function openPlanFloor(n){ if(!hasPlan(n))return; planState.floor=String(n); go(
 function renderBooking(){
   const m=metrics();
   const floorTenants={};
-  DB.deals.forEach(d=>{(floorTenants[d.floor]=floorTenants[d.floor]||[]).push(d);});
+  DB.deals.forEach(d=>{dealFloors(d).forEach(fn=>{(floorTenants[fn]=floorTenants[fn]||[]).push(d);});});
   let bwins='';
   for(let y=48;y<=560;y+=21){
     if(y>236 && y<392) continue;
@@ -1216,7 +1233,7 @@ function renderPipe(){
 function dealCard(d){
   return `<div class="deal" draggable="true" data-id="${d.id}" onclick="openDeal('${d.id}')">
     <div class="dn">${d.tenant}</div>
-    <div class="dm"><span>Этаж ${d.floor}</span><span>${money(d.area)} м²</span></div>
+    <div class="dm"><span>Этаж ${dealFloorsLabel(d)||'—'}</span><span>${money(d.area)} м²</span></div>
     <div class="drow">
       <span class="price num">$${money(d.area*dealRate(d))}/мес</span>
       <span class="temp ${d.temp}">${TEMPS[d.temp]}</span>
@@ -1270,7 +1287,7 @@ function drawTable(){
   if(tFilter==='won')rows=rows.filter(d=>d.stage==='won');
   else if(tFilter!=='all')rows=rows.filter(d=>d.temp===tFilter&&d.stage!=='won');
   if(tQuery.trim()){const q=tQuery.toLowerCase();
-    rows=rows.filter(d=>(d.tenant+d.industry+d.floor+d.email).toLowerCase().includes(q));}
+    rows=rows.filter(d=>(d.tenant+d.industry+dealFloors(d).join(' ')+d.email).toLowerCase().includes(q));}
   rows.sort((a,b)=>b.updated-a.updated);
   const host=document.getElementById('ttable');
   if(!rows.length){host.innerHTML=`<div class="empty">${ic('empty')}<div>Ничего не найдено</div></div>`;return;}
@@ -1281,7 +1298,7 @@ function drawTable(){
     return `<tr onclick="openDeal('${d.id}')">
       <td><div class="cellname"><span class="av">${initials(d.tenant)}</span>${d.tenant}</div></td>
       <td style="color:var(--ink-soft)">${d.industry}</td>
-      <td class="num">${d.floor>=1?d.floor:'—'}</td>
+      <td class="num">${dealFloorsLabel(d)||'—'}</td>
       <td class="num">${money(d.area)} м²</td>
       <td class="num" style="font-weight:600">$${money(d.area*dealRate(d))}</td>
       <td><span class="pill" style="background:${st.color}1f;color:${st.color}">${st.name}</span></td>
@@ -1291,7 +1308,7 @@ function drawTable(){
 }
 
 /* ---------- FLOORS ---------- */
-function dealsOnUnit(fl,num){return DB.deals.filter(d=>d.floor===fl && (d.units||[]).includes(num));}
+function dealsOnUnit(fl,num){return DB.deals.filter(d=>(d.units||[]).includes(num) && unitFloorOf(num)===+fl);}
 function unitStatus(fl,num){
   const ds=dealsOnUnit(fl,num);
   if(ds.some(d=>d.stage==='won')) return 'booked';
@@ -1427,12 +1444,13 @@ function openDeal(id){
     floor:0,units:[],area:0,rate:0,agreedRate:'',term:36,note:'',
     basis:'',priority:'',scores:{},tasks:[],acts:[]};
   dealUnits=(d.units||[]).slice();
+  dealFloorsSel=dealFloors(d).slice();
   const dr=document.getElementById('drawer');
   dr.innerHTML=`
     <header class="df-top">
       <div>
         <h2>${id?esc(d.tenant)||'Сделка':'Новая сделка'}</h2>
-        <div class="df-sub">${id?'$'+money(d.area*dealRate(d))+' / мес · '+(d.floor>=1?('этаж '+d.floor+((d.units&&d.units.length)?(' · помещ. '+d.units.join(', ')):'')):'этаж не назначен')+' · '+((STAGES.find(s=>s.id===d.stage)||{}).name||''):'Заполните карточку арендатора'}</div>
+        <div class="df-sub">${id?'$'+money(d.area*dealRate(d))+' / мес · '+(dealFloors(d).length?('этаж '+dealFloorsLabel(d)+((d.units&&d.units.length)?(' · помещ. '+d.units.join(', ')):'')):'этаж не назначен')+' · '+((STAGES.find(s=>s.id===d.stage)||{}).name||''):'Заполните карточку арендатора'}</div>
       </div>
       <div class="df-actions">
         ${id?'<button class="btn danger" onclick="delDeal()">Удалить</button>':''}
@@ -1450,13 +1468,10 @@ function openDeal(id){
           <div class="field"><label>Email</label><input id="f_email" value="${esc(d.email)}"></div>
           <div class="field"><label>Телефон</label><input id="f_phone" value="${esc(d.phone)}"></div>
         </div>
-        <div class="field"><label>Этаж</label>
-          <select id="f_floor" onchange="onFloorPick()">
-            <option value="0" ${!(d.floor>=1)?'selected':''}>— не назначен</option>
-            ${[...DB.floors].filter(f=>f.active).sort((a,b)=>b.n-a.n).map(f=>`<option value="${f.n}" ${d.floor==f.n?'selected':''}>Этаж ${f.n} — ${esc(f.type||'')}</option>`).join('')}
-          </select></div>
-        <div class="field"><label>Помещения <span class="autohint">можно выбрать несколько</span></label>
-          <div class="unitchips" id="f_units">${unitChips(d.floor||0,d.units||[])}</div></div>
+        <div class="field"><label>Этажи <span class="autohint">можно выбрать несколько</span></label>
+          <div class="unitchips" id="f_floors">${floorChips()}</div></div>
+        <div class="field"><label>Помещения <span class="autohint">по выбранным этажам</span></label>
+          <div class="unitchips" id="f_units">${unitChipsMulti()}</div></div>
         <div class="frow2">
           <div class="field"><label>Площадь, кв.м</label><input id="f_area" type="number" min="0" value="${d.area}"></div>
           <div class="field"><label>Базовая ставка, $/кв.м <span class="autohint">из помещения</span></label><input id="f_rate" type="number" min="0" step="0.01" value="${d.rate}"></div>
@@ -1520,33 +1535,43 @@ function openDeal(id){
 let tempPick=null;
 function pickTemp(k){tempPick=k;document.querySelectorAll('#f_temp button').forEach(b=>b.classList.toggle('on',b.dataset.t===k));}
 let dealUnits=[];
-function unitChips(fn,sel){
-  const us=floorUnits(fn);
-  if(!us.length) return '<div class="muted">Сначала выберите этаж</div>';
-  return us.map(u=>{
-    const on=(sel||[]).includes(u.number);
-    return `<button type="button" class="uchip ${on?'on':''}" onclick="toggleUnitChip('${esc(u.number)}')">${esc(u.number)} · ${u.area==null?'?':Math.round(u.area)} м²${u.rate?(' · $'+u.rate):''}</button>`;
+let dealFloorsSel=[];
+function floorChips(){
+  return [...DB.floors].filter(f=>f.active).sort((a,b)=>a.n-b.n).map(f=>{
+    const on=dealFloorsSel.includes(f.n);
+    return `<button type="button" class="uchip ${on?'on':''}" onclick="toggleFloorChip(${f.n})">Этаж ${f.n}</button>`;
+  }).join('');
+}
+function unitChipsMulti(){
+  if(!dealFloorsSel.length) return '<div class="muted">Сначала выберите этаж</div>';
+  return [...dealFloorsSel].sort((a,b)=>a-b).map(fn=>{
+    const us=floorUnits(fn);
+    const chips=us.length?us.map(u=>{
+      const on=dealUnits.includes(u.number);
+      return `<button type="button" class="uchip ${on?'on':''}" onclick="toggleUnitChip('${esc(u.number)}')">${esc(u.number)} · ${u.area==null?'?':Math.round(u.area)} м²${u.rate?(' · $'+u.rate):''}</button>`;
+    }).join(''):'<div class="muted">Нет помещений</div>';
+    return `<div class="uchip-floor"><div class="uchip-floor-h">Этаж ${fn}</div><div class="unitchips">${chips}</div></div>`;
   }).join('');
 }
 function recalcUnitTotals(){
-  const fn=+document.getElementById('f_floor').value;
   let area=0,val=0;
-  dealUnits.forEach(n=>{const u=unitOf(fn,n); if(u){area+=(u.area||0); val+=(u.area||0)*(u.rate||0);}});
+  dealUnits.forEach(n=>{const u=unitByNum(n); if(u){area+=(u.area||0); val+=(u.area||0)*(u.rate||0);}});
   document.getElementById('f_area').value=area?+area.toFixed(2):0;
   document.getElementById('f_rate').value=area?+(val/area).toFixed(2):0;
 }
 function toggleUnitChip(num){
   const i=dealUnits.indexOf(num);
   if(i>=0)dealUnits.splice(i,1); else dealUnits.push(num);
-  const fn=+document.getElementById('f_floor').value;
-  document.getElementById('f_units').innerHTML=unitChips(fn,dealUnits);
+  document.getElementById('f_units').innerHTML=unitChipsMulti();
   recalcUnitTotals();
 }
-function onFloorPick(){
-  const fn=+document.getElementById('f_floor').value;
-  dealUnits=[];
-  document.getElementById('f_units').innerHTML=unitChips(fn,dealUnits);
-  document.getElementById('f_area').value=0; document.getElementById('f_rate').value=0;
+function toggleFloorChip(n){
+  const i=dealFloorsSel.indexOf(n);
+  if(i>=0){ dealFloorsSel.splice(i,1); dealUnits=dealUnits.filter(num=>unitFloorOf(num)!==n); }
+  else dealFloorsSel.push(n);
+  document.getElementById('f_floors').innerHTML=floorChips();
+  document.getElementById('f_units').innerHTML=unitChipsMulti();
+  recalcUnitTotals();
 }
 function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');editId=null;tempPick=null;}
@@ -1603,7 +1628,7 @@ async function saveDeal(){
     const d=DB.deals.find(x=>x.id===editId);
     const oldStage=d.stage;
     Object.assign(d,{tenant,industry:g('f_industry'),email:g('f_email'),phone:g('f_phone'),
-      floor:+g('f_floor'),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
+      floor:(dealFloorsSel.slice().sort((a,b)=>a-b)[0]||0),floors:dealFloorsSel.slice().sort((a,b)=>a-b),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
       stage:g('f_stage'),temp,note:g('f_note'),basis:g('f_basis'),priority:prio,scores:sc(),updated:Date.now()});
     const nt=g('f_newtask').trim();              // если в поле новой задачи что-то набрано — не теряем
     if(nt){(d.tasks=d.tasks||[]).push({id:'t'+Date.now(),text:nt,date:g('f_newtaskdate'),done:false});}
@@ -1614,7 +1639,7 @@ async function saveDeal(){
   }else{
     const nt=g('f_newtask').trim();
     const nd={id:'d'+Date.now(),tenant,industry:g('f_industry'),email:g('f_email'),phone:g('f_phone'),
-      floor:+g('f_floor'),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
+      floor:(dealFloorsSel.slice().sort((a,b)=>a-b)[0]||0),floors:dealFloorsSel.slice().sort((a,b)=>a-b),units:dealUnits.slice(),area:+g('f_area'),rate:+g('f_rate'),agreedRate:(g('f_agreed')===''?'':+g('f_agreed')),term:+g('f_term'),
       stage:g('f_stage'),temp,note:g('f_note'),basis:g('f_basis'),priority:prio,scores:sc(),created:Date.now(),updated:Date.now(),
       tasks:nt?[{id:'t'+Date.now(),text:nt,date:g('f_newtaskdate'),done:false}]:[],
       acts:[{type:'create',t:'Сделка создана',ts:Date.now()}]};
