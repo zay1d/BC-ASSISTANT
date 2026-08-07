@@ -183,7 +183,7 @@
   .smap{display:flex;flex-direction:column;gap:5px;padding:6px 2px}
   .smap-row{display:flex;align-items:center;gap:12px}
   .smap-n{flex:0 0 36px;text-align:right;font-size:13px;font-weight:700;color:var(--ink)}
-  .smap-bar{flex:1;display:flex;gap:6px;align-items:center}
+  .smap-bar{flex:1;min-width:0;display:flex;gap:6px;align-items:center}
   .smap-bar .u{height:30px;line-height:30px;border-radius:999px;padding:0 12px;font-size:9.5px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;min-width:30px;box-shadow:0 1px 2px rgba(14,27,42,.12);transition:filter .12s,transform .12s}
   .smap-bar .u:hover{filter:brightness(1.06);transform:translateY(-1px)}
   /* unit multi-select chips in deal card */
@@ -471,7 +471,18 @@
     html,body,.shell,.main{max-width:100vw}
     .main{overflow-x:hidden}
     /* широкие таблицы/карты скроллятся ВНУТРИ своего вида, а не растягивают страницу */
-    #view-tenants,#view-floors,#view-config,#view-pipe,#view-tasks{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    #view-tenants,#view-config,#view-pipe,#view-tasks{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    /* карта статусов: ужимаем плашки, чтобы этаж помещался в экран целиком */
+    .kpi-row[style]{grid-template-columns:repeat(3,1fr)!important}
+    #view-floors .kpi .val{font-size:19px}
+    #view-floors .kpi{padding:9px 10px 8px}
+    #view-floors .kpi .lab{font-size:10px}
+    .smap-row{gap:6px}
+    .smap-n{flex:0 0 22px;font-size:11px}
+    .smap-bar{gap:3px}
+    .smap-bar .u{min-width:10px;padding:0 5px;height:24px;line-height:24px;font-size:8px}
+    .panel-b{padding:4px 12px 14px}
+    .panel-h{padding:10px 12px 6px}
   }
   .menu-btn{display:none}
   /* ---------- План этажа ---------- */
@@ -702,7 +713,7 @@ async function bootData(){
     if(e && e.message==='unauthorized') return; // показан экран входа
     CLOUD_OK=false; await load(); // API недоступен — работаем локально
   }
-  go('dash');
+  go(location.hash.slice(1)||'dash');
 }
 function showLogin(msg){
   let el=document.getElementById('loginOverlay');
@@ -836,15 +847,30 @@ const titles={dash:['Дашборд','Сводка по заполняемост
   floors:['Карта статусов','Помещения по этажам: бронь, в процессе, свободно'],
   plan:['План этажа','Интерактивный план: клик по офису — статус и сделка'],
   config:['Исходные данные','Площадь и ставка $/кв.м по зонам (стороны окон) для каждого этажа']};
-function go(v){
+function go(v,push){
+  if(!titles[v]) v='dash';
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
   document.getElementById('vTitle').textContent=titles[v][0];
   document.getElementById('vSub').textContent=titles[v][1];
   document.getElementById('side').classList.remove('show');
+  window.scrollTo(0,0); // каждый раздел открывается с начала
+  // история браузера: «назад» ведёт по разделам
+  if(push!==false){
+    const st={v};
+    if(!history.state) history.replaceState(st,'','#'+v);
+    else if(history.state.v!==v || history.state.drawer) history.pushState(st,'','#'+v);
+  }
   render(v);
 }
+window.addEventListener('popstate',e=>{
+  if(document.getElementById('drawer').classList.contains('open')){
+    drawerInHistory=false; closeDrawer(); return; // «назад» закрывает карточку сделки
+  }
+  const v=(e.state&&e.state.v)||location.hash.slice(1)||'dash';
+  go(v,false);
+});
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.v);});
 
 function render(v){
@@ -1580,6 +1606,7 @@ function openDeal(id){
       </section>
     </div>`;
   dr.classList.add('open');document.getElementById('scrim').classList.add('open');
+  if(!drawerInHistory){ history.pushState(Object.assign({},history.state||{v:'dash'},{drawer:1}),''); drawerInHistory=true; }
 }
 let tempPick=null;
 function pickTemp(k){tempPick=k;document.querySelectorAll('#f_temp button').forEach(b=>b.classList.toggle('on',b.dataset.t===k));}
@@ -1623,7 +1650,9 @@ function toggleFloorChip(n){
   recalcUnitTotals();
 }
 function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');editId=null;tempPick=null;}
+let drawerInHistory=false;
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');editId=null;tempPick=null;
+  if(drawerInHistory){ drawerInHistory=false; history.back(); }}
 function stageColor(st){return st==='won'?'var(--won)':((st==='nego'||st==='loi')?'var(--amber)':'var(--cold)');}
 function stageWord(st){return st==='won'?'Занято':((st==='nego'||st==='loi')?'Переговоры':'В работе');}
 function plural(n,a,b,c){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c;}
