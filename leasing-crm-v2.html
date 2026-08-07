@@ -134,9 +134,9 @@
   .floor .fl-pills{flex:0 0 250px;display:flex;gap:6px;align-items:center;overflow:hidden}
   .floor .pl{font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
   .floor .pl-occ{background:var(--won-soft);color:var(--won)}
-  .floor .pl-free{background:var(--paper-2);color:var(--ink-soft)}
+  .floor .pl-free{background:#fbe0db;color:#a63a2b}
   .fl-bar-wrap{flex:1;position:relative;display:flex;align-items:center}
-  .floor .fl-bar{flex:1;height:22px;border-radius:5px;background:var(--paper-2);overflow:hidden;cursor:pointer;display:flex;gap:1px}
+  .floor .fl-bar{flex:1;height:22px;border-radius:5px;background:#f7d5cf;overflow:hidden;cursor:pointer;display:flex;gap:1px}
   .comp-badge{position:absolute;top:-9px;left:0;transform:translateX(-50%);min-width:23px;height:23px;border-radius:999px;background:#ef4136;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid #fff;box-shadow:0 0 0 0 rgba(239,65,54,.9);animation:compPulse 1.35s ease-out infinite;z-index:10;cursor:pointer;pointer-events:auto}
   .comp-badge:hover{background:#d92d22}
   @keyframes compPulse{0%{box-shadow:0 0 0 0 rgba(239,65,54,.85)}70%{box-shadow:0 0 0 12px rgba(239,65,54,0)}100%{box-shadow:0 0 0 0 rgba(239,65,54,0)}}
@@ -1106,7 +1106,7 @@ function renderBooking(){
           <span><i class="dot" style="background:var(--won)"></i>Занято</span>
           <span><i class="dot" style="background:var(--amber)"></i>В переговорах</span>
           <span><i class="dot" style="background:var(--cold)"></i>В работе</span>
-          <span><i class="dot" style="background:var(--paper-2)"></i>Свободно</span>
+          <span><i class="dot" style="background:#e3796b"></i>Свободно</span>
         </div>
       </div>
       <div class="panel-b"><div class="bmap">
@@ -1416,7 +1416,7 @@ function dealOnUnit(fl,num){
 function renderFloors(){
   const el=document.getElementById('view-floors');
   const SL={booked:'Бронь',proc:'В процессе',free:'Свободно'};
-  const SC={booked:'#e3796b',proc:'#f1c453',free:'#5cba8c'};   // мягкие, дружелюбные цвета
+  const SC={booked:'#5cba8c',proc:'#f1c453',free:'#e3796b'};   // занято — зелёное, свободно — красное
   const FG={booked:'#fff',proc:'#5e4708',free:'#fff'};
   const floors=[...DB.floors].filter(f=>f.active && (f.units||[]).length).sort((a,b)=>b.n-a.n);
   let cBooked=0,cProc=0,cFree=0;
@@ -1952,8 +1952,8 @@ async function importBackup(input){
 }
 
 /* ---------- План этажа ---------- */
-const PLAN_SC={booked:'#e3796b',proc:'#f1c453',free:'#5cba8c'};
-const PLAN_SG={booked:'#a63a2b',proc:'#a9821f',free:'#2f8a5f'};
+const PLAN_SC={booked:'#5cba8c',proc:'#f1c453',free:'#e3796b'};
+const PLAN_SG={booked:'#2f8a5f',proc:'#a9821f',free:'#a63a2b'};
 const PLAN_SL={booked:'Бронь',proc:'В процессе',free:'Свободно'};
 const planState={floor:null,scale:1,tx:0,ty:0};
 function planFloors(){ return [...(window.BUILDING?window.BUILDING.floors:[])].sort((a,b)=>(+a.floor)-(+b.floor)); }
