@@ -563,6 +563,26 @@
   #view-booking .floor{height:auto;flex:1 1 0;min-height:0}
   #view-booking .floor.inactive{flex:1 1 0;min-height:0}
   #view-booking .fl-eye{height:auto;min-height:0}
+  /* узкие экраны: башня декоративная — прячем, плашки сжимаются */
+  @media(max-width:1080px){
+    #view-booking .building{display:none}
+    .floor .fl-pills{flex:0 1 auto;min-width:0}
+  }
+  /* телефон: обычная скроллируемая страница, без полноэкранных высот (iOS Safari) */
+  @media(max-width:760px){
+    #view-booking.active{display:block;overflow:visible;height:auto!important}
+    #view-booking .panel{display:block}
+    #view-booking .panel-b{display:block}
+    #view-booking .bmap{height:auto;display:block}
+    #view-booking .stack{overflow:visible}
+    #view-booking .floor,#view-booking .floor.inactive{flex:0 0 auto;height:28px}
+    .floor{gap:6px}
+    .floor .fl-pills{display:none}
+    .floor .fl-occ{width:34px;flex:0 0 34px}
+    .fl-eye-sp{width:28px}
+    #view-booking .bk-head{grid-template-columns:1fr}
+    #view-booking .bk-legend{grid-column:1;justify-content:flex-start}
+  }
   .fl-eye{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
     width:28px;height:22px;margin:0 4px;border:none;background:transparent;cursor:pointer;
     color:var(--steel-500);border-radius:6px;transition:.15s}
