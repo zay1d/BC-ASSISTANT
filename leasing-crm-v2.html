@@ -136,9 +136,9 @@
   .floor .fl-pills{flex:0 0 250px;display:flex;gap:6px;align-items:center;overflow:hidden}
   .floor .pl{font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
   .floor .pl-occ{background:var(--won-soft);color:var(--won)}
-  .floor .pl-free{background:#fbe0db;color:#a63a2b}
+  .floor .pl-free{background:#fbf0d2;color:#8a6a14}
   .fl-bar-wrap{flex:1;position:relative;display:flex;align-items:center}
-  .floor .fl-bar{flex:1;height:22px;border-radius:5px;background:#f7d5cf;overflow:hidden;cursor:pointer;display:flex;gap:1px}
+  .floor .fl-bar{flex:1;height:22px;border-radius:5px;background:#f8ecc6;overflow:hidden;cursor:pointer;display:flex;gap:1px}
   .comp-badge{position:absolute;top:-9px;left:0;transform:translateX(-50%);min-width:23px;height:23px;border-radius:999px;background:#ef4136;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid #fff;box-shadow:0 0 0 0 rgba(239,65,54,.9);animation:compPulse 1.35s ease-out infinite;z-index:10;cursor:pointer;pointer-events:auto}
   .comp-badge:hover{background:#d92d22}
   @keyframes compPulse{0%{box-shadow:0 0 0 0 rgba(239,65,54,.85)}70%{box-shadow:0 0 0 12px rgba(239,65,54,0)}100%{box-shadow:0 0 0 0 rgba(239,65,54,0)}}
@@ -1141,8 +1141,8 @@ function renderBooking(){
     for(const x of [44,71,98]) bwins+=`<rect x="${x}" y="${y}" width="18" height="11" rx="1.5" fill="rgba(205,217,228,.32)"/>`;
   }
   const occW=Math.round(56*m.occPct/100);
-  const segColor=st=> st==='won'?'var(--won)':((st==='nego'||st==='loi')?'var(--amber)':'var(--cold)');
-  const statusWord=st=> st==='won'?'Занято':((st==='nego'||st==='loi')?'Переговоры':'В работе');
+  const segColor=st=> st==='won'?'#5cba8c':(st==='loi'?'#ee9a4a':'#7db8e8');
+  const statusWord=st=> st==='won'?'Занято':(st==='loi'?'КП согласован':'Переговоры');
   const el=document.getElementById('view-booking');
   sizePlanView(el);
   el.innerHTML=`
@@ -1150,11 +1150,12 @@ function renderBooking(){
       <div class="panel-h bk-head">
         <h3>Карта здания</h3>
         <div class="legend bk-legend">
-          <span><i class="dot" style="background:var(--won)"></i>Занято</span>
-          <span><i class="dot" style="background:var(--amber)"></i>В переговорах</span>
-          <span><i class="dot" style="background:var(--cold)"></i>В работе</span>
-          <span><i class="dot" style="background:#e3796b"></i>Свободно</span>
+          <span><i class="dot" style="background:#5cba8c"></i>Занято</span>
+          <span><i class="dot" style="background:#ee9a4a"></i>КП согласован</span>
+          <span><i class="dot" style="background:#7db8e8"></i>Переговоры</span>
+          <span><i class="dot" style="background:#f1c453"></i>Свободно</span>
         </div>
+        <button class="btn" id="bkExportBtn" style="justify-self:end" onclick="bookingExportAll()" title="Скачать лейауты всех этажей одним PNG-файлом">Скачать лейауты всех этажей</button>
       </div>
       <div class="panel-b"><div class="bmap">
         <div class="building">
@@ -1450,11 +1451,22 @@ function newDealFor(srcId){
 
 /* ---------- FLOORS ---------- */
 function dealsOnUnit(fl,num){return DB.deals.filter(d=>(d.units||[]).includes(num) && unitFloorOf(num)===+fl);}
+/* 4 статуса: booked — подписано (зелёный), kp — КП согласован (оранжевый),
+   talks — ведутся переговоры (голубой), free — свободно (жёлтый) */
+function stageStatus(st){return st==='won'?'booked':(st==='loi'?'kp':'talks');}
 function unitStatus(fl,num){
   const ds=dealsOnUnit(fl,num);
   if(ds.some(d=>d.stage==='won')) return 'booked';
-  if(ds.length) return 'proc';
+  if(ds.some(d=>d.stage==='loi')) return 'kp';
+  if(ds.length) return 'talks';
   return 'free';
+}
+/* подпись арендатора на лейауте: первый претендент (+N, если их несколько) */
+function unitClaimLabel(fl,num){
+  const ds=dealsOnUnit(fl,num); if(!ds.length) return '';
+  const prim=ds.find(d=>d.stage==='won')||ds.slice().sort((a,b)=>(a.created||0)-(b.created||0))[0];
+  let name=(prim.tenant||'Сделка').trim(); if(name.length>16) name=name.slice(0,15)+'…';
+  return ds.length>1? name+' +'+(ds.length-1) : name;
 }
 function dealOnUnit(fl,num){
   const ds=dealsOnUnit(fl,num);
@@ -1462,15 +1474,15 @@ function dealOnUnit(fl,num){
 }
 function renderFloors(){
   const el=document.getElementById('view-floors');
-  const SL={booked:'Бронь',proc:'В процессе',free:'Свободно'};
-  const SC={booked:'#5cba8c',proc:'#f1c453',free:'#e3796b'};   // занято — зелёное, свободно — красное
-  const FG={booked:'#fff',proc:'#5e4708',free:'#fff'};
+  const SL={booked:'Занято',kp:'КП согласован',talks:'Переговоры',free:'Свободно'};
+  const SC={booked:'#5cba8c',kp:'#ee9a4a',talks:'#7db8e8',free:'#f1c453'};   // зелёный/оранжевый/голубой/жёлтый
+  const FG={booked:'#fff',kp:'#fff',talks:'#123a57',free:'#5e4708'};
   const floors=[...DB.floors].filter(f=>f.active && (f.units||[]).length).sort((a,b)=>b.n-a.n);
-  let cBooked=0,cProc=0,cFree=0;
+  const cnt={booked:0,kp:0,talks:0,free:0};
   const rows=floors.map(f=>{
     const denom=Math.max(f.gla||0, floorAreaSum(f))||1;
     // счётчики по помещениям
-    f.units.forEach(u=>{const s=unitStatus(f.n,u.number); if(s==='booked')cBooked++; else if(s==='proc')cProc++; else cFree++;});
+    f.units.forEach(u=>{cnt[unitStatus(f.n,u.number)]++;});
     // группировка: помещения одной сделки сливаются в один блок; свободные — отдельно
     const groups=[]; const byKey={};
     f.units.forEach(u=>{
@@ -1480,7 +1492,7 @@ function renderFloors(){
       byKey[key].area+=(u.area||0);
     });
     const segs=groups.map(g=>{
-      const s=g.deal?(g.deal.stage==='won'?'booked':'proc'):'free';
+      const s=g.deal?stageStatus(g.deal.stage):'free';
       const w=Math.max(g.area/denom*100,3);
       const ar=Math.round(g.area);
       const lab=g.deal?`${esc(g.deal.tenant)}, ${ar} м²`:`${esc(g.num)}, ${ar} м²`;
@@ -1490,17 +1502,13 @@ function renderFloors(){
     return `<div class="smap-row"><div class="smap-n num">${f.n}</div><div class="smap-bar">${segs}</div></div>`;
   }).join('');
   el.innerHTML=`
-    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi"><div class="kpi-accent" style="background:${SC.booked}"></div><div class="lab">Бронь</div><div class="val num">${cBooked}</div></div>
-      <div class="kpi"><div class="kpi-accent" style="background:${SC.proc}"></div><div class="lab">В процессе</div><div class="val num">${cProc}</div></div>
-      <div class="kpi"><div class="kpi-accent" style="background:${SC.free}"></div><div class="lab">Свободно</div><div class="val num">${cFree}</div></div>
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+      ${['booked','kp','talks','free'].map(s=>`<div class="kpi"><div class="kpi-accent" style="background:${SC[s]}"></div><div class="lab">${SL[s]}</div><div class="val num">${cnt[s]}</div></div>`).join('')}
     </div>
     <div class="panel">
       <div class="panel-h"><h3>Карта статусов помещений</h3><span class="hint">ширина помещения = площадь · клик — открыть сделку</span></div>
       <div class="legend">
-        <span><i class="dot" style="background:${SC.booked}"></i>Бронь</span>
-        <span><i class="dot" style="background:${SC.proc}"></i>В процессе</span>
-        <span><i class="dot" style="background:${SC.free}"></i>Свободно</span>
+        ${['booked','kp','talks','free'].map(s=>`<span><i class="dot" style="background:${SC[s]}"></i>${SL[s]}</span>`).join('')}
       </div>
       <div class="panel-b"><div class="smap">${rows}</div></div>
     </div>`;
@@ -1999,9 +2007,10 @@ async function importBackup(input){
 }
 
 /* ---------- План этажа ---------- */
-const PLAN_SC={booked:'#5cba8c',proc:'#f1c453',free:'#e3796b'};
-const PLAN_SG={booked:'#2f8a5f',proc:'#a9821f',free:'#a63a2b'};
-const PLAN_SL={booked:'Бронь',proc:'В процессе',free:'Свободно'};
+const PLAN_ORDER=['booked','kp','talks','free'];
+const PLAN_SC={booked:'#5cba8c',kp:'#ee9a4a',talks:'#7db8e8',free:'#f1c453'};
+const PLAN_SG={booked:'#2f8a5f',kp:'#b06a21',talks:'#3f7fb4',free:'#a9821f'};
+const PLAN_SL={booked:'Занято',kp:'КП согласован',talks:'Переговоры',free:'Свободно'};
 const planState={floor:null,scale:1,tx:0,ty:0};
 function planFloors(){ return [...(window.BUILDING?window.BUILDING.floors:[])].sort((a,b)=>(+a.floor)-(+b.floor)); }
 function planFloorData(fl){ return (window.BUILDING.floors||[]).find(f=>String(f.floor)===String(fl)); }
@@ -2051,13 +2060,15 @@ function buildPlan(el,floors){
     const pts=o.poly.map(p=>p[0]+','+p[1]).join(' ');
     return `<polygon data-oid="${o.id}" points="${pts}" fill="#5cba8c" fill-opacity="0.32" stroke="#2f8a5f" stroke-width="3"></polygon>`;
   }).join('');
+  // подписи арендаторов на самих офисах (повёрнуты на -90°, чтобы на экране были горизонтальны)
+  const labels=fd.offices.map(o=>`<text data-tid="${o.id}" x="${o.cx}" y="${o.cy}" dy="-58" transform="rotate(-90 ${o.cx} ${o.cy})" text-anchor="middle" font-family="Inter,sans-serif" font-size="46" font-weight="700" fill="#17304a" stroke="#ffffff" stroke-width="8" paint-order="stroke" style="pointer-events:none"></text>`).join('');
   el.innerHTML=`
     <div class="plan-topbar">
       <button class="plan-back" onclick="go('booking')" title="Вернуться к бронированиям">‹ Назад</button>
       <div class="plan-tabs" id="planTabs">${tabs}</div>
       <div class="plan-exp">
         <button onclick="planExportCSV()">Экспорт CSV</button>
-        <button onclick="planExportPNG()">Экспорт PNG</button>
+        <button onclick="planExportPNG()" title="Скачать лейаут этого этажа с легендой">Скачать лейаут ${fl} этажа</button>
       </div>
     </div>
     <div class="plan-layout">
@@ -2065,7 +2076,7 @@ function buildPlan(el,floors){
         <div class="plan-pan" id="planPan">
           <div class="plan-rot" id="planRot">
             <img src="${planPngSrc(fl)}" alt="План ${fl} этажа">
-            <svg id="planSvg" viewBox="0 0 ${fd.w} ${fd.h}" preserveAspectRatio="xMinYMin meet">${polys}</svg>
+            <svg id="planSvg" viewBox="0 0 ${fd.w} ${fd.h}" preserveAspectRatio="xMinYMin meet">${polys}${labels}</svg>
           </div>
         </div>
         <div class="plan-tools">
@@ -2102,19 +2113,21 @@ function buildPlan(el,floors){
 function paintPlan(){
   const fd=planFloorData(planState.floor); if(!fd) return;
   const svg=document.getElementById('planSvg'); if(!svg) return;
-  const cnt={booked:0,proc:0,free:0}, ar={booked:0,proc:0,free:0};
+  const cnt={booked:0,kp:0,talks:0,free:0}, ar={booked:0,kp:0,talks:0,free:0};
   fd.offices.forEach(o=>{
     const unit=planIdToUnit(fd.floor,o.id);
     const st=unitStatus(+fd.floor,unit);
     cnt[st]++; ar[st]+=o.area;
     const pl=svg.querySelector(`polygon[data-oid="${o.id}"]`);
     if(pl){ pl.setAttribute('fill',PLAN_SC[st]); pl.setAttribute('stroke',PLAN_SG[st]); }
+    const tx=svg.querySelector(`text[data-tid="${o.id}"]`);
+    if(tx) tx.textContent=unitClaimLabel(+fd.floor,unit);
   });
-  const tot=ar.booked+ar.proc+ar.free||1;
+  const tot=ar.booked+ar.kp+ar.talks+ar.free||1;
   const occ=Math.round(ar.booked/tot*100);
   // легенда с счётчиками по этажу
   document.getElementById('planLegend').innerHTML=`<h4>Этаж ${fd.floor}</h4>`+
-    ['booked','proc','free'].map(s=>`<div class="lg"><span class="sw" style="background:${PLAN_SC[s]}"></span>${PLAN_SL[s]}<b>${cnt[s]} · ${fmtM2(ar[s])} м²</b></div>`).join('')+
+    PLAN_ORDER.map(s=>`<div class="lg"><span class="sw" style="background:${PLAN_SC[s]}"></span>${PLAN_SL[s]}<b>${cnt[s]} · ${fmtM2(ar[s])} м²</b></div>`).join('')+
     `<div class="lg" style="margin-top:8px"><span>Заполняемость (по площади)</span><b class="plan-occ" style="margin-left:auto">${occ}%</b></div>`;
   // список офисов этажа: арендаторы-претенденты + стадия сделки
   const fnum=+fd.floor;
@@ -2170,9 +2183,11 @@ let _tipEl=null;
 function planTip(ev,oid){
   const fl=planState.floor, unit=planIdToUnit(fl,oid);
   const o=planFloorData(fl).offices.find(x=>x.id===oid);
-  const st=unitStatus(+fl,unit), d=dealOnUnit(+fl,unit);
+  const st=unitStatus(+fl,unit), ds=dealsOnUnit(+fl,unit);
   if(!_tipEl){ _tipEl=document.createElement('div'); _tipEl.className='plan-tip'; document.body.appendChild(_tipEl); }
-  _tipEl.innerHTML=`<b>Офис ${oid}</b><br>${fmtM2(o.area)} м² · ${PLAN_SL[st]}`+(d?`<br>${esc(d.tenant||'Сделка')}`:'');
+  const who=ds.slice().sort((a,b)=>(b.stage==='won')-(a.stage==='won')||(a.created||0)-(b.created||0))
+    .map(d=>esc(d.tenant||'Сделка')+' — '+((STAGES.find(s=>s.id===d.stage)||{}).name||d.stage)).join('<br>');
+  _tipEl.innerHTML=`<b>Офис ${oid}</b><br>${fmtM2(o.area)} м² · ${PLAN_SL[st]}`+(who?`<br>${who}`:'');
   _tipEl.style.left=(ev.clientX+14)+'px'; _tipEl.style.top=(ev.clientY+14)+'px'; _tipEl.style.opacity='1';
 }
 function hideTip(){ if(_tipEl) _tipEl.style.opacity='0'; }
@@ -2221,22 +2236,120 @@ function planExportCSV(){
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download='summit-offices.csv'; a.click();
 }
+/* нарисовать этаж (повёрнутый в портрет) с полигонами и подписями арендаторов: ox,oy — смещение, s — масштаб */
+function drawFloorOnCanvas(cx,fd,img,ox,oy,s){
+  cx.save();
+  cx.translate(ox+fd.h*s,oy); cx.rotate(Math.PI/2); cx.scale(s,s);
+  cx.drawImage(img,0,0,fd.w,fd.h);
+  const fl=+fd.floor;
+  fd.offices.forEach(o=>{
+    const st=unitStatus(fl,planIdToUnit(fd.floor,o.id));
+    cx.beginPath(); o.poly.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])); cx.closePath();
+    cx.fillStyle=PLAN_SC[st]; cx.globalAlpha=0.35; cx.fill();
+    cx.globalAlpha=1; cx.strokeStyle=PLAN_SG[st]; cx.lineWidth=4; cx.stroke();
+  });
+  // подписи арендаторов — горизонтальные в портретной ориентации
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.font='700 46px Inter,sans-serif'; cx.lineJoin='round';
+  fd.offices.forEach(o=>{
+    const lab=unitClaimLabel(fl,planIdToUnit(fd.floor,o.id)); if(!lab) return;
+    cx.save(); cx.translate(o.cx,o.cy); cx.rotate(-Math.PI/2);
+    cx.strokeStyle='#ffffff'; cx.lineWidth=10; cx.strokeText(lab,0,-58);
+    cx.fillStyle='#17304a'; cx.fillText(lab,0,-58); cx.restore();
+  });
+  cx.restore();
+}
+/* шапка листа: заголовок + легенда 4 статусов с количеством и метражом по этажу */
+function drawPlanHeader(cx,fd,w,band){
+  const fl=+fd.floor;
+  const cnt={booked:0,kp:0,talks:0,free:0}, ar={booked:0,kp:0,talks:0,free:0};
+  fd.offices.forEach(o=>{const st=unitStatus(fl,planIdToUnit(fd.floor,o.id)); cnt[st]++; ar[st]+=o.area;});
+  cx.fillStyle='#ffffff'; cx.fillRect(0,0,w,band);
+  cx.textBaseline='alphabetic';
+  cx.fillStyle='#0e1b2a'; cx.textAlign='left';
+  cx.font='700 78px "Space Grotesk",Inter,sans-serif';
+  cx.fillText('SUMMIT · Этаж '+fd.floor,60,118);
+  cx.textAlign='right'; cx.font='400 42px Inter,sans-serif'; cx.fillStyle='#54677a';
+  cx.fillText(new Date().toLocaleDateString('ru-RU'),w-60,118);
+  cx.textAlign='left';
+  let x=60; const y=band-66;
+  PLAN_ORDER.forEach(s=>{
+    cx.fillStyle=PLAN_SC[s]; cx.fillRect(x,y-38,46,46);
+    cx.strokeStyle=PLAN_SG[s]; cx.lineWidth=3; cx.strokeRect(x,y-38,46,46);
+    cx.fillStyle='#0e1b2a'; cx.font='600 38px Inter,sans-serif';
+    const t=`${PLAN_SL[s]} — ${cnt[s]} · ${fmtM2(ar[s])} м²`;
+    cx.fillText(t,x+60,y);
+    x+=60+cx.measureText(t).width+64;
+  });
+  cx.strokeStyle='#dde4ea'; cx.lineWidth=2;
+  cx.beginPath(); cx.moveTo(0,band-2); cx.lineTo(w,band-2); cx.stroke();
+}
 function planExportPNG(){
   const fd=planFloorData(planState.floor);
   const img=document.querySelector('#planRot img');
-  const cv=document.createElement('canvas'); cv.width=fd.h; cv.height=fd.w; // портрет (повёрнуто)
+  const band=300;
+  const cv=document.createElement('canvas'); cv.width=fd.h; cv.height=band+fd.w; // портрет + шапка
   const cx=cv.getContext('2d');
   try{
-    cx.translate(fd.h,0); cx.rotate(Math.PI/2);   // 90° CW, как на экране
-    cx.drawImage(img,0,0,fd.w,fd.h);
-    fd.offices.forEach(o=>{
-      const st=unitStatus(+fd.floor,planIdToUnit(fd.floor,o.id));
-      cx.beginPath(); o.poly.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1])); cx.closePath();
-      cx.fillStyle=PLAN_SC[st]; cx.globalAlpha=0.35; cx.fill();
-      cx.globalAlpha=1; cx.strokeStyle=PLAN_SG[st]; cx.lineWidth=4; cx.stroke();
-    });
-    cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='summit-floor-'+fd.floor+'.png'; a.click(); });
+    cx.fillStyle='#ffffff'; cx.fillRect(0,0,cv.width,cv.height);
+    drawPlanHeader(cx,fd,cv.width,band);
+    drawFloorOnCanvas(cx,fd,img,0,band,1);
+    cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='summit-floor-'+fd.floor+'-'+ymd()+'.png'; a.click(); });
   }catch(e){ alert('Экспорт PNG недоступен при открытии файла напрямую (ограничение браузера). Работает при запуске через локальный сервер.'); }
+}
+/* выгрузка лейаутов всех этажей одним файлом (кнопка в «Бронированиях») */
+async function bookingExportAll(){
+  const floors=planFloors();
+  if(!floors.length){ alert('Нет данных планов этажей.'); return; }
+  const btn=document.getElementById('bkExportBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Готовлю файл…'; }
+  try{
+    const imgs=await Promise.all(floors.map(f=>new Promise(res=>{
+      const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=f.png;
+    })));
+    const cellW=1140, pad=30, titleH=86;
+    const cells=floors.map(f=>({f,s:(cellW-2*pad)/f.h}));
+    const planH=Math.max(...cells.map(c=>Math.ceil(c.f.w*c.s)));
+    const cellH=titleH+planH+pad;
+    const cols=Math.min(4,floors.length), rows=Math.ceil(floors.length/cols);
+    const headH=190;
+    const cv=document.createElement('canvas'); cv.width=cols*cellW; cv.height=headH+rows*cellH+pad;
+    const cx=cv.getContext('2d');
+    cx.fillStyle='#ffffff'; cx.fillRect(0,0,cv.width,cv.height);
+    // общая шапка
+    cx.fillStyle='#0e1b2a'; cx.textAlign='left'; cx.textBaseline='alphabetic';
+    cx.font='700 64px "Space Grotesk",Inter,sans-serif';
+    cx.fillText('SUMMIT Business Center — лейауты этажей',50,86);
+    cx.font='400 34px Inter,sans-serif'; cx.fillStyle='#54677a';
+    cx.fillText(new Date().toLocaleDateString('ru-RU'),50,134);
+    let lx=cv.width-50; cx.font='600 32px Inter,sans-serif';
+    [...PLAN_ORDER].reverse().forEach(s=>{
+      const t=PLAN_SL[s]; const tw=cx.measureText(t).width;
+      lx-=tw; cx.fillStyle='#0e1b2a'; cx.fillText(t,lx,128);
+      lx-=46; cx.fillStyle=PLAN_SC[s]; cx.fillRect(lx,96,36,36);
+      cx.strokeStyle=PLAN_SG[s]; cx.lineWidth=2; cx.strokeRect(lx,96,36,36);
+      lx-=44;
+    });
+    cx.strokeStyle='#dde4ea'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(0,headH-2); cx.lineTo(cv.width,headH-2); cx.stroke();
+    // этажи сеткой
+    cells.forEach((c,i)=>{
+      if(!imgs[i]) return;
+      const col=i%cols, row=(i/cols)|0;
+      const ox=col*cellW, oy=headH+row*cellH;
+      const fl=+c.f.floor;
+      let occA=0, totA=0;
+      c.f.offices.forEach(o=>{ totA+=o.area; if(unitStatus(fl,planIdToUnit(c.f.floor,o.id))==='booked') occA+=o.area; });
+      const occ=totA?Math.round(occA/totA*100):0;
+      cx.fillStyle='#0e1b2a'; cx.textAlign='left'; cx.font='700 46px "Space Grotesk",Inter,sans-serif';
+      cx.fillText('Этаж '+c.f.floor,ox+pad,oy+60);
+      cx.fillStyle='#54677a'; cx.font='500 30px Inter,sans-serif';
+      cx.fillText('занято '+occ+'%',ox+pad+230,oy+60);
+      drawFloorOnCanvas(cx,c.f,imgs[i],ox+pad,oy+titleH,c.s);
+    });
+    cv.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='summit-layouts-'+ymd()+'.png'; a.click(); });
+  }catch(e){ alert('Не удалось сформировать файл: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Скачать лейауты всех этажей'; } }
 }
 
 /* ---------- boot ---------- */
